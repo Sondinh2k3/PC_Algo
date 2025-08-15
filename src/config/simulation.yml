@@ -1,0 +1,14 @@
+type: "sumo"
+config:
+  config_file: "PhuQuoc/phuquoc.sumocfg"
+  net_file: "PhuQuoc/phuquoc.net.xml"
+  route_file: "PhuQuoc/phuquoc.rou.xml"
+  # additional_file: "./sumo/osm.add.xml"
+  port: 8814
+  step_length: 1 # seconds
+  steps_delay: 100   #ms
+  time_to_teleport: 1000
+  gui: true
+  detector:
+    period: 10  # seconds
+  simulation_level: "evaluation"

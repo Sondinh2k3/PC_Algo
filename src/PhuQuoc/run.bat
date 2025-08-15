@@ -1,0 +1,1 @@
+sumo-gui -c phuquoc.sumocfg --start --step-length 0.1

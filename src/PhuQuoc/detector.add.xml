@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-08-13 14:13:52 by Eclipse SUMO netedit Version 1.23.1
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <!-- Detectors -->
+    <inductionLoop id="e1_00" lane="-482169086#8_0" pos="1318.17" period="10.00" file="e1_1.xml"/>
+    <inductionLoop id="e1_02" lane="-482169086#8_1" pos="1317.41" period="10.00" file="e1_0.xml"/>
+    <inductionLoop id="e1_03" lane="1149580107#4_0" pos="70.89" period="10.00" file="e1_2.xml"/>
+    <inductionLoop id="e1_036" lane="1149580107#4_1" pos="71.70" period="10.00" file="e1_35.xml"/>
+    <inductionLoop id="e1_10" lane="-155315678#5_0" pos="249.59" period="10.00" file="e1_10.xml"/>
+    <inductionLoop id="e1_11" lane="-100954129#3_0" pos="65.84" period="10.00" file="e1_11.xml"/>
+    <inductionLoop id="e1_12" lane="-155775198#0_0" pos="347.30" period="10.00" file="e1_12.xml"/>
+    <inductionLoop id="e1_13" lane="100954129#1_0" pos="50.47" period="10.00" file="e1_13.xml"/>
+    <inductionLoop id="e1_14" lane="-1117528627#2_0" pos="409.68" period="10.00" file="e1_14.xml"/>
+    <inductionLoop id="e1_15" lane="155315669#0_0" pos="711.89" period="10.00" file="e1_15.xml"/>
+    <inductionLoop id="e1_16" lane="723990057#7_0" pos="38.31" period="10.00" file="e1_16.xml"/>
+    <inductionLoop id="e1_17" lane="1117528627#1_0" pos="160.06" period="10.00" file="e1_17.xml"/>
+    <inductionLoop id="e1_18" lane="100954163#9_0" pos="172.47" period="10.00" file="e1_18.xml"/>
+    <inductionLoop id="e1_19" lane="-1117528626#1_0" pos="421.16" period="10.00" file="e1_19.xml"/>
+    <inductionLoop id="e1_20" lane="-1307054560#0_0" pos="26.00" period="10.00" file="e1_20.xml"/>
+    <inductionLoop id="e1_21" lane="155315678#5_0" pos="240.17" period="10.00" file="e1_21.xml"/>
+    <inductionLoop id="e1_22" lane="1117528626#0_0" pos="419.60" period="10.00" file="e1_22.xml"/>
+    <inductionLoop id="e1_23" lane="723990057#5_0" pos="36.50" period="10.00" file="e1_23.xml"/>
+    <inductionLoop id="e1_24" lane="-723990057#6_0" pos="43.48" period="10.00" file="e1_24.xml"/>
+    <inductionLoop id="e1_25" lane="1307054560#5_0" pos="86.93" period="10.00" file="e1_25.xml"/>
+    <inductionLoop id="e1_26" lane="-205021436#0_0" pos="543.63" period="10.00" file="e1_26.xml"/>
+    <inductionLoop id="e1_27" lane="-766326334.90_0" pos="129.78" period="10.00" file="e1_27.xml"/>
+    <inductionLoop id="e1_28" lane="1149581388_0" pos="115.49" period="10.00" file="e1_28.xml"/>
+    <inductionLoop id="e1_29" lane="1149582046#0_1" pos="1997.57" period="10.00" file="e1_29.xml"/>
+    <inductionLoop id="e1_3" lane="155775198#1_0" pos="362.36" period="10.00" file="e1_3.xml"/>
+    <inductionLoop id="e1_30" lane="1149582046#0_0" pos="1996.96" period="10.00" file="e1_30.xml"/>
+    <inductionLoop id="e1_31" lane="-100954245#13_0" pos="1429.35" period="10.00" file="e1_31.xml"/>
+    <inductionLoop id="e1_32" lane="-723990056_0" pos="72.08" period="10.00" file="e1_32.xml"/>
+    <inductionLoop id="e1_33" lane="-163652291_0" pos="34.24" period="10.00" file="e1_33.xml"/>
+    <inductionLoop id="e1_34" lane="-155775200#1_0" pos="713.82" period="10.00" file="e1_34.xml"/>
+    <inductionLoop id="e1_4" lane="-155315693#2_0" pos="249.23" period="10.00" file="e1_4.xml"/>
+    <inductionLoop id="e1_5" lane="-155775198#4_0" pos="30.04" period="10.00" file="e1_5.xml"/>
+    <inductionLoop id="e1_6" lane="-155775198#3_0" pos="361.39" period="10.00" file="e1_6.xml"/>
+    <inductionLoop id="e1_7" lane="155775198#0_0" pos="357.49" period="10.00" file="e1_7.xml"/>
+    <inductionLoop id="e1_8" lane="-100954129#0_0" pos="55.51" period="10.00" file="e1_8.xml"/>
+    <inductionLoop id="e1_9" lane="155315678#0_0" pos="615.78" period="10.00" file="e1_9.xml"/>
+    <laneAreaDetector id="e2_0" lane="-482169086#8_0" pos="1236.48" length="80.00" period="10.00" file="e2_0.xml"/>
+    <laneAreaDetector id="e2_1" lane="-482169086#8_1" pos="1235.38" length="80.00" period="10.00" file="e2_1.xml"/>
+    <laneAreaDetector id="e2_10" lane="100954129#1_0" pos="0.28" length="50.00" period="10.00" file="e2_10.xml"/>
+    <laneAreaDetector id="e2_11" lane="155315678#0_0" pos="535.15" length="80.00" period="10.00" file="e2_11.xml"/>
+    <laneAreaDetector id="e2_12" lane="-155315678#5_0" pos="167.77" length="80.00" period="10.00" file="e2_12.xml"/>
+    <laneAreaDetector id="e2_13" lane="-100954129#3_0" pos="0.90" length="64.00" period="10.00" file="e2_13.xml"/>
+    <laneAreaDetector id="e2_14" lane="-1117528627#2_0" pos="328.79" length="80.00" period="10.00" file="e2_14.xml"/>
+    <laneAreaDetector id="e2_15" lane="-155775198#0_0" pos="266.91" length="80.00" period="10.00" file="e2_15.xml"/>
+    <laneAreaDetector id="e2_16" lane="723990057#7_0" pos="0.91" length="38.00" period="10.00" file="e2_16.xml"/>
+    <laneAreaDetector id="e2_17" lane="155315669#0_0" pos="630.90" length="80.00" period="10.00" file="e2_17.xml"/>
+    <laneAreaDetector id="e2_18" lane="1117528627#0_0" pos="334.36" length="80.00" period="10.00" file="e2_18.xml"/>
+    <laneAreaDetector id="e2_19" lane="-1117528626#1_0" pos="340.75" length="80.00" period="10.00" file="e2_19.xml"/>
+    <laneAreaDetector id="e2_2" lane="-482169086#8_1" pos="1235.38" length="80.00" period="10.00" file="e2_2.xml"/>
+    <laneAreaDetector id="e2_20" lane="100954163#9_0" pos="91.66" length="80.00" period="10.00" file="e2_20.xml"/>
+    <laneAreaDetector id="e2_21" lane="-1307054560#0_0" pos="0.94" length="25.00" period="10.00" file="e2_21.xml"/>
+    <laneAreaDetector id="e2_22" lane="723990057#5_0" pos="0.50" length="35.00" period="10.00" file="e2_22.xml"/>
+    <laneAreaDetector id="e2_23" lane="155315678#5_0" pos="158.60" length="80.00" period="10.00" file="e2_23.xml"/>
+    <laneAreaDetector id="e2_24" lane="1117528626#0_0" pos="337.89" length="80.00" period="10.00" file="e2_24.xml"/>
+    <laneAreaDetector id="e2_25" lane="1307054560#5_0" pos="5.39" length="80.00" period="10.00" file="e2_25.xml"/>
+    <laneAreaDetector id="e2_26" lane="-723990057#6_0" pos="1.69" length="40.00" period="10.00" file="e2_26.xml"/>
+    <laneAreaDetector id="e2_27" lane="-205021436#0_0" pos="462.83" length="80.00" period="10.00" file="e2_27.xml"/>
+    <laneAreaDetector id="e2_28" lane="1149582046#0_0" pos="1915.88" length="80.00" period="10.00" file="e2_28.xml"/>
+    <laneAreaDetector id="e2_29" lane="-766326334.90_0" pos="47.84" length="80.00" period="10.00" file="e2_29.xml"/>
+    <laneAreaDetector id="e2_3" lane="1149580107#4_0" pos="0.31" length="70.00" period="10.00" file="e2_3.xml"/>
+    <laneAreaDetector id="e2_30" lane="1149581388_0" pos="33.40" length="80.00" period="10.00" file="e2_30.xml"/>
+    <laneAreaDetector id="e2_31" lane="1149582046#0_1" pos="1915.94" length="80.00" period="10.00" file="e2_31.xml"/>
+    <laneAreaDetector id="e2_32" lane="-723990056_0" pos="0.06" length="70.00" period="10.00" file="e2_32.xml"/>
+    <laneAreaDetector id="e2_33" lane="-100954245#13_0" pos="1346.49" length="80.00" period="10.00" file="e2_33.xml"/>
+    <laneAreaDetector id="e2_34" lane="-163652291_0" pos="1.52" length="30.00" period="10.00" file="e2_34.xml"/>
+    <laneAreaDetector id="e2_35" lane="-155775200#1_0" pos="632.25" length="80.00" period="10.00" file="e2_35.xml"/>
+    <laneAreaDetector id="e2_36" lane="1149580107#4_1" pos="0.84" length="70.00" period="10.00" file="e2_36.xml"/>
+    <laneAreaDetector id="e2_4" lane="155775198#1_0" pos="281.55" length="80.00" period="10.00" file="e2_4.xml"/>
+    <laneAreaDetector id="e2_5" lane="-155315693#2_0" pos="168.22" length="80.00" period="10.00" file="e2_5.xml"/>
+    <laneAreaDetector id="e2_6" lane="-155775198#4_0" pos="0.16" length="30.00" period="10.00" file="e2_6.xml"/>
+    <laneAreaDetector id="e2_7" lane="-100954129#0_0" pos="0.33" length="54.00" period="10.00" file="e2_7.xml"/>
+    <laneAreaDetector id="e2_8" lane="-155775198#3_0" pos="279.98" length="80.00" period="10.00" file="e2_8.xml"/>
+    <laneAreaDetector id="e2_9" lane="155775198#0_0" pos="276.55" length="80.00" period="10.00" file="e2_9.xml"/>
+</additional>

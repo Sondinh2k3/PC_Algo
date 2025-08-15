@@ -1,0 +1,13 @@
+neo4j:
+  uri: "neo4j://localhost:7687"
+  username: neo4j
+  password: kien2002
+  database: hni
+
+mysql:
+  host: "localhost"
+  port: 3309
+  database: "mydb"
+  uri : "jdbc:mysql://localhost:3309/mydb"
+  user: "root"
+  password: "123456"
