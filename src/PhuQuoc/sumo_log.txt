@@ -1,0 +1,21 @@
+Loading net-file from 'phuquoc.net.xml' ... done (177ms).
+Loading additional-files from 'detector.add.xml' ... done (61ms).
+Loading route-files incrementally from 'phuquoc.rou.xml'
+Loading route-files incrementally from 'caugiay-demo.rou.xml'
+Loading done.
+Simulation ended at time: 0.00.
+Performance:
+ Duration: 14.46s
+ Real time factor: 0
+ UPS: 0.000000
+Vehicles:
+ Inserted: 0 (Loaded: 2)
+ Running: 0
+ Waiting: 0
+Statistics (avg of 0):
+ RouteLength: 0.00
+ Speed: 0.00
+ Duration: 0.00
+ WaitingTime: 0.00
+ TimeLoss: 0.00
+ DepartDelay: 0.00

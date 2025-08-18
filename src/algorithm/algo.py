@@ -48,189 +48,6 @@ class SolverStatus:
     UNKNOWN = "unknown"
     ERROR = "error"
 
-class MIQPSolver:
-    """
-    Wrapper class cho Google OR-Tools để giải bài toán MIQP
-    Hỗ trợ biến liên tục, nguyên, nhị phân và hàm mục tiêu bậc hai
-    LƯU Ý: LỚP NÀY ĐƯỢC GIỮ LẠI ĐỂ ĐẢM BẢO TÍNH TƯƠNG THÍCH NGƯỢC
-    """
-    
-    def __init__(self, solver_name: str = 'SCIP'):
-        self.solver_name = solver_name
-        self.solver = None
-        self.variables = {}
-        self.constraints = []
-        self.objective_coeffs = {}
-        self.quadratic_coeffs = {}
-        self.objective_type = ObjectiveType.MINIMIZE
-        self.is_built = False
-        
-    def _create_solver(self):
-        """Tạo solver instance"""
-        if self.solver_name == 'SCIP':
-            self.solver = pywraplp.Solver.CreateSolver('SCIP')
-        elif self.solver_name == 'GUROBI':
-            self.solver = pywraplp.Solver.CreateSolver('GUROBI')
-        elif self.solver_name == 'CPLEX':
-            self.solver = pywraplp.Solver.CreateSolver('CPLEX')
-        elif self.solver_name == 'CBC':
-            self.solver = pywraplp.Solver.CreateSolver('CBC')
-        else:
-            self.solver = pywraplp.Solver.CreateSolver('SCIP')
-            
-        if not self.solver:
-            raise RuntimeError(f"Không thể tạo solver {self.solver_name}")
-    
-    def add_variable(self, name: str, var_type: VariableType, 
-                    lb: float = 0.0, ub: float = float('inf')) -> str:
-        """Thêm biến vào bài toán"""
-        if var_type == VariableType.BINARY:
-            lb, ub = 0.0, 1.0
-            
-        self.variables[name] = {
-            'type': var_type,
-            'lb': lb,
-            'ub': ub,
-            'var_obj': None
-        }
-        return name
-    
-    def add_variables(self, names: List[str], var_type: VariableType,
-                     lb: Union[float, List[float]] = 0.0,
-                     ub: Union[float, List[float]] = float('inf')) -> List[str]:
-        """Thêm nhiều biến cùng lúc"""
-        n = len(names)
-        
-        if isinstance(lb, (int, float)):
-            lb = [lb] * n
-        if isinstance(ub, (int, float)):
-            ub = [ub] * n
-            
-        for i, name in enumerate(names):
-            self.add_variable(name, var_type, lb[i], ub[i])
-            
-        return names
-    
-    def add_constraint(self, coeffs: Dict[str, float], sense: str, rhs: float, name: str = ""):
-        """Thêm ràng buộc tuyến tính"""
-        self.constraints.append({
-            'coeffs': coeffs,
-            'sense': sense,
-            'rhs': rhs,
-            'name': name
-        })
-    
-    def set_objective_linear(self, coeffs: Dict[str, float], obj_type: ObjectiveType):
-        """Thiết lập hàm mục tiêu tuyến tính"""
-        self.objective_coeffs = coeffs
-        self.objective_type = obj_type
-    
-    def _build_model(self):
-        """Xây dựng model OR-Tools"""
-        if self.is_built:
-            return
-            
-        self._create_solver()
-        
-        # Tạo biến
-        for name, var_info in self.variables.items():
-            if var_info['type'] == VariableType.CONTINUOUS:
-                var = self.solver.NumVar(var_info['lb'], var_info['ub'], name)
-            elif var_info['type'] == VariableType.INTEGER:
-                var = self.solver.IntVar(var_info['lb'], var_info['ub'], name)
-            elif var_info['type'] == VariableType.BINARY:
-                var = self.solver.BoolVar(name)
-            
-            self.variables[name]['var_obj'] = var
-        
-        # Thêm ràng buộc
-        for i, constraint in enumerate(self.constraints):
-            coeffs = constraint['coeffs']
-            sense = constraint['sense']
-            rhs = constraint['rhs']
-            
-            if sense == '<=':
-                ct = self.solver.Constraint(-self.solver.infinity(), rhs)
-            elif sense == '>=':
-                ct = self.solver.Constraint(rhs, self.solver.infinity())
-            elif sense == '==':
-                ct = self.solver.Constraint(rhs, rhs)
-            else:
-                raise ValueError(f"Sense không hợp lệ: {sense}")
-            
-            for var_name, coeff in coeffs.items():
-                if var_name in self.variables:
-                    ct.SetCoefficient(self.variables[var_name]['var_obj'], coeff)
-        
-        # Thiết lập hàm mục tiêu
-        objective = self.solver.Objective()
-        
-        for var_name, coeff in self.objective_coeffs.items():
-            if var_name in self.variables:
-                objective.SetCoefficient(self.variables[var_name]['var_obj'], coeff)
-        
-        if self.objective_type == ObjectiveType.MINIMIZE:
-            objective.SetMinimization()
-        else:
-            objective.SetMaximization()
-        
-        self.is_built = True
-    
-    def solve(self, time_limit: Optional[float] = None) -> Dict:
-        """Giải bài toán"""
-        if not self.is_built:
-            self._build_model()
-        
-        if time_limit:
-            self.solver.SetTimeLimit(int(time_limit * 1000))
-        
-        status = self.solver.Solve()
-        
-        result = {
-            'status': self._get_status_string(status),
-            'objective_value': None,
-            'variables': {},
-            'solve_time': self.solver.wall_time() / 1000.0,
-            'iterations': self.solver.iterations() if hasattr(self.solver, 'iterations') else None
-        }
-        
-        if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-            result['objective_value'] = self.solver.Objective().Value()
-            
-            for name, var_info in self.variables.items():
-                var_obj = var_info['var_obj']
-                result['variables'][name] = var_obj.solution_value()
-        
-        return result
-    
-    def _get_status_string(self, status) -> str:
-        """Chuyển đổi status code thành string"""
-        if status == pywraplp.Solver.OPTIMAL:
-            return SolverStatus.OPTIMAL
-        elif status == pywraplp.Solver.FEASIBLE:
-            return SolverStatus.FEASIBLE
-        elif status == pywraplp.Solver.INFEASIBLE:
-            return SolverStatus.INFEASIBLE
-        elif status == pywraplp.Solver.UNBOUNDED:
-            return SolverStatus.UNBOUNDED
-        elif status == pywraplp.Solver.ABNORMAL:
-            return SolverStatus.ERROR
-        else:
-            return SolverStatus.UNKNOWN
-    
-    def print_solution(self, result: Dict):
-        """In kết quả giải"""
-        print("=== KẾT QUẢ GIẢI BÀI TOÁN ===")
-        print(f"Trạng thái: {result['status']}")
-        print(f"Giá trị mục tiêu: {result['objective_value']}")
-        print(f"Thời gian giải: {result['solve_time']:.3f} giây")
-        
-        if result['variables']:
-            print("\nGiá trị biến:")
-            for name, value in result['variables'].items():
-                print(f"  {name} = {value:.6f}")
-
-
 class PerimeterController:
     """
     Lớp điều khiển chu vi phản hồi hoàn chỉnh
@@ -238,15 +55,20 @@ class PerimeterController:
     """
     
     def __init__(self, kp: float = KP_H, ki: float = KI_H, n_hat: float = N_HAT, 
-                 config_file: str = "intersection_config.json"):
+                 config_file: str = "intersection_config.json", shared_dict: Optional[Dict] = None):
         """Khởi tạo bộ điều khiển với các tham số cần thiết"""
         # Chuyển đổi từ đơn vị giờ sang giây
         control_interval_h = CONTROL_INTERVAL_S / 3600.0
         self.kp = kp * control_interval_h
         self.ki = ki * control_interval_h
         self.n_hat = n_hat
-
+        
+        self.shared_dict = shared_dict
         self.is_active = False
+        if self.shared_dict is not None:
+            self.shared_dict['is_active'] = self.is_active
+            self.shared_dict['green_times'] = {}
+
         self.activation_threshold = 0.85 * self.n_hat  
         self.deactivation_threshold = 0.70 * self.n_hat 
 
@@ -266,6 +88,10 @@ class PerimeterController:
                     'main': cycle_length // 2,
                     'secondary': cycle_length // 2
                 }
+        
+        if self.shared_dict is not None:
+            self.shared_dict['green_times'] = self.previous_green_times
+
 
         print("🚦 Bộ điều khiển chu vi đã được khởi tạo.")
         print(f"Ngưỡng kích hoạt: n(k) > {self.activation_threshold:.0f} xe")
@@ -284,6 +110,9 @@ class PerimeterController:
             if self.is_active:
                 print(f"HỦY ĐIỀU KHIỂN CHU VI (n(k)={n_k:.0f} < {self.deactivation_threshold:.0f})")
             self.is_active = False
+        
+        if self.shared_dict is not None:
+            self.shared_dict['is_active'] = self.is_active
 
     def calculate_target_inflow(self, n_k: float, n_k_minus_1: float, qg_k_minus_1: float) -> float:
         """
@@ -304,7 +133,7 @@ class PerimeterController:
         
         return max(0, qg_k)  # Đảm bảo không âm
 
-    def solve_optimization_problem(self, target_inflow: float) -> Optional[Dict]:
+    def solve_optimization_problem(self, target_inflow: float, live_queue_lengths: Optional[Dict] = None) -> Optional[Dict]:
         """
         BƯỚC 3: Giải bài toán tối ưu hóa để chuyển đổi qg thành thời gian đèn xanh
         SỬ DỤNG PYSCIPOPT ĐỂ GIẢI BÀI TOÁN MIQP PHI TUYẾN
@@ -358,9 +187,9 @@ class PerimeterController:
         # Thành phần 2: Tối đa hóa việc sử dụng đèn xanh (dựa trên hàng đợi)
         utilization_expr = quicksum(
             (1 - (G_vars[int_id]['main'] * self.config_manager.get_saturation_flows(int_id)['main']) / 
-                (self.config_manager.get_queue_lengths(int_id)['main'] + 1))**2 +
+                ((live_queue_lengths[int_id]['main'] if live_queue_lengths and int_id in live_queue_lengths else self.config_manager.get_queue_lengths(int_id)['main']) + 1))**2 +
             (1 - (G_vars[int_id]['secondary'] * self.config_manager.get_saturation_flows(int_id)['secondary']) / 
-                (self.config_manager.get_queue_lengths(int_id)['secondary'] + 1))**2
+                ((live_queue_lengths[int_id]['secondary'] if live_queue_lengths and int_id in live_queue_lengths else self.config_manager.get_queue_lengths(int_id)['secondary']) + 1))**2
             for int_id in self.intersection_ids
         )
         second_component = theta_2 * utilization_expr
@@ -382,19 +211,26 @@ class PerimeterController:
             }
             
             # Cập nhật giá trị trước đó
+            new_green_times = {}
             for int_id in self.intersection_ids:
-                self.previous_green_times[int_id] = {
+                new_green_times[int_id] = {
                     'main': int(result['variables'][f'G_{int_id}_main']),
                     'secondary': int(result['variables'][f'G_{int_id}_secondary'])
                 }
+            self.previous_green_times = new_green_times
+            
+            # Cập nhật shared_dict nếu có
+            if self.shared_dict is not None:
+                self.shared_dict['green_times'] = new_green_times
+
             return result
         else:
             print(f"  Không tìm được nghiệm: {model.getStatus()}")
             return None
 
-    def distribute_inflow_to_green_times(self, target_inflow: float):
+    def distribute_inflow_to_green_times(self, target_inflow: float, live_queue_lengths: Optional[Dict] = None):
         """Phân bổ lưu lượng mục tiêu thành thời gian đèn xanh"""
-        result = self.solve_optimization_problem(target_inflow)
+        result = self.solve_optimization_problem(target_inflow, live_queue_lengths)
         
         if result:
             print(f"  Thời gian đèn xanh mới:")
@@ -418,7 +254,7 @@ class PerimeterController:
         
         return None
 
-    def run_simulation_step(self, n_current: float, n_previous: float, qg_previous: float) -> Tuple[float, float, bool]:
+    def run_simulation_step(self, n_current: float, n_previous: float, qg_previous: float, live_queue_lengths: Optional[Dict] = None) -> Tuple[float, float, bool]:
         """
         Chạy một bước điều khiển chu vi (1 vòng lặp)
         Trả về (n_current, qg_new, controller_active)
@@ -430,7 +266,7 @@ class PerimeterController:
 
         if not self.is_active:
             print("Mục tiêu đã đạt được. Bộ điều khiển không hoạt động.")
-            print(f"{'='*60}\n")
+            print(f"{ '='*60}\n")
             return n_current, qg_previous, False
 
         print(f" BƯỚC 2: Tính toán lưu lượng mục tiêu qg")
@@ -441,11 +277,10 @@ class PerimeterController:
         )
 
         print(f" BƯỚC 3: Phân bổ thành thời gian đèn xanh")
-        self.distribute_inflow_to_green_times(qg_new)
+        self.distribute_inflow_to_green_times(qg_new, live_queue_lengths)
         
-        print(f"{'='*60}\n")
+        print(f"{ '='*60}\n")
         return n_current, qg_new, True
-
 
 def simulate_perimeter_control():
     """
@@ -507,7 +342,6 @@ def simulate_perimeter_control():
     
     print(" KẾT THÚC MÔ PHỎNG")
     print("="*70)
-
 
 def example_simple_optimization():
     """Ví dụ đơn giản sử dụng MIQPSolver (KHÔNG THAY ĐỔI)"""

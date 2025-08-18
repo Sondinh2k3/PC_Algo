@@ -5,9 +5,143 @@
 
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <!-- VTypes -->
-    <vType id="bus" vClass="bus" emissionClass="HBEFA3/PC_G_EU4" width="1.80" height="1.50" color="0,128,0"/>
-    <vType id="motor" minGap="1.00" vClass="motorcycle" emissionClass="HBEFA3/LDV_G_EU6" width="1.80"/>
+    <!-- <vType id="bus" vClass="bus" emissionClass="HBEFA3/PC_G_EU4" color="0,128,0"/>
+    <vType id="motor" vClass="motorcycle" emissionClass="HBEFA3/LDV_G_EU6"/>
     <vType id="t_1"/>
-    <vType id="truck" vClass="truck" emissionClass="HBEFA3/PC_G_EU4" width="1.80" height="1.50" color="222,175,44,0"/>
-    <vTypeDistribution id="td_0" vTypes="DEFAULT_BIKETYPE bus motor t_1 truck" probabilities="0.10 0.10 0.40 0.30 0.10"/>
+    <vType id="truck" vClass="truck" emissionClass="HBEFA3/PC_G_EU4" color="222,175,44,0"/> -->
+
+    <!-- XE MÁY - Đặc trưng giao thông Việt Nam -->
+    <vType id="motorbike" 
+           vClass="motorcycle"
+           length="2.20" 
+           width="0.80" 
+           height="1.50"
+           maxSpeed="16.67"
+           accel="2.5" 
+           decel="4.5"
+           apparentDecel="3.5"
+           emergencyDecel="6.0"
+           sigma="0.8"
+           tau="0.8"
+           minGap="1.0"
+           speedFactor="normc(1.1,0.2,0.8,1.4)"
+           color="yellow"
+           emissionClass="HBEFA3/PC_G_EU4"
+           
+           laneChangeModel="SL2015"
+           lcStrategic="2.0"
+           lcCooperative="0.3"
+           lcSpeedGain="2.0"
+           lcKeepRight="0.2"
+           lcSublane="2.0"
+           lcPushy="1.5"
+           lcAssertive="2.0"
+           lcImpatience="0.8"
+           lcTimeToImpatience="10.0"
+           lcAccelLat="2.0"
+           lcTurnAlignmentDistance="15.0"
+           />
+
+    <!-- Ô TÔ CON - Phong cách lái xe thành thị -->
+    <vType id="car" 
+           vClass="passenger"
+           length="4.50" 
+           width="1.80" 
+           height="1.50"
+           maxSpeed="22.22"
+           accel="2.0" 
+           decel="4.0"
+           apparentDecel="3.0"
+           emergencyDecel="5.0"
+           sigma="0.5"
+           tau="1.0"
+           minGap="2.0"
+           speedFactor="normc(1.0,0.15,0.7,1.3)"
+           color="white"
+           emissionClass="HBEFA3/PC_G_EU5"
+           
+           laneChangeModel="SL2015"
+           lcStrategic="1.0"
+           lcCooperative="1.0"
+           lcSpeedGain="1.0"
+           lcKeepRight="1.0"
+           lcSublane="1.0"
+           lcPushy="0.5"
+           lcAssertive="1.0"
+           lcImpatience="0.3"
+           lcTimeToImpatience="20.0"
+           lcAccelLat="1.5"
+           lcTurnAlignmentDistance="25.0"
+           />
+
+    <!-- XE BUÝT - Vận tải công cộng -->
+    <vType id="bus" 
+           vClass="bus"
+           length="12.00" 
+           width="2.50" 
+           height="3.20"
+           maxSpeed="16.67"
+           accel="1.2" 
+           decel="3.5"
+           apparentDecel="2.5"
+           emergencyDecel="4.0"
+           sigma="0.3"
+           tau="1.2"
+           minGap="3.0"
+           speedFactor="normc(0.95,0.1,0.8,1.1)"
+           color="blue"
+           emissionClass="HBEFA3/Bus"
+           personCapacity="80"
+           containerCapacity="0"
+           boardingDuration="3.0"
+           loadingDuration="15.0"
+           
+           laneChangeModel="SL2015"
+           lcStrategic="0.8"
+           lcCooperative="1.2"
+           lcSpeedGain="0.8"
+           lcKeepRight="1.2"
+           lcSublane="0.5"
+           lcPushy="0.3"
+           lcAssertive="0.8"
+           lcImpatience="0.1"
+           lcTimeToImpatience="60.0"
+           lcAccelLat="1.0"
+           lcTurnAlignmentDistance="40.0"
+           />
+
+    <!-- XE TÁI - Vận tải hàng hóa -->
+    <vType id="truck" 
+           vClass="truck"
+           length="8.00" 
+           width="2.20" 
+           height="2.80"
+           maxSpeed="19.44"
+           accel="1.0" 
+           decel="3.0"
+           apparentDecel="2.0"
+           emergencyDecel="3.5"
+           sigma="0.3"
+           tau="1.5"
+           minGap="2.5"
+           speedFactor="normc(0.9,0.1,0.7,1.1)"
+           color="green"
+           emissionClass="HBEFA3/HDV"
+           containerCapacity="20"
+           
+           laneChangeModel="SL2015"
+           lcStrategic="0.6"
+           lcCooperative="1.0"
+           lcSpeedGain="0.6"
+           lcKeepRight="1.0"
+           lcSublane="0.5"
+           lcPushy="0.2"
+           lcAssertive="0.6"
+           lcImpatience="0.1"
+           lcTimeToImpatience="120.0"
+           lcAccelLat="0.8"
+           lcTurnAlignmentDistance="50.0"
+           />
+
+    <vTypeDistribution id="td_0" vTypes="DEFAULT_BIKETYPE bus motorbike car truck" probabilities="0.10 0.10 0.40 0.30 0.10"/>
 </routes>

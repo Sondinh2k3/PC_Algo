@@ -196,6 +196,21 @@ class IntersectionConfigManager:
         """
         intersection_data = self.config_data.get('optimization_parameters', {}).get('intersection_data', {})
         return intersection_data.get(intersection_id)
+
+    def get_traffic_light_id(self, intersection_id: str) -> Optional[str]:
+        """
+        Lấy ID của đèn giao thông tương ứng với ID của nút giao.
+        
+        Args:
+            intersection_id: ID của nút giao (e.g., "junction01")
+            
+        Returns:
+            str: ID của đèn giao thông (e.g., "1166230678") hoặc None nếu không tìm thấy.
+        """
+        intersection = self.config_data.get('intersections', {}).get(intersection_id)
+        if intersection:
+            return intersection.get('traffic_light_id')
+        return None
     
     def get_traffic_light_data(self, tl_id: str) -> Optional[Dict]:
         """

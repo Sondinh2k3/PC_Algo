@@ -2,8 +2,8 @@
   "metadata": {
     "network_file": "unknown",
     "generated_at": "default",
-    "total_intersections": 3,
-    "total_traffic_lights": 3
+    "total_intersections": 5,
+    "total_traffic_lights": 5
   },
   "traffic_lights": {
     "1166230678": {
@@ -79,23 +79,84 @@
         }
       ],
       "total_cycle": 90
+    },
+    "1677153087": {
+      "type": "static",
+      "phases": [
+        {
+          "duration": 39.00,
+          "state": "GggrrrGGg"
+        },
+        {
+          "duration": 6.00,
+          "state": "yyyrrrGyy"
+        },
+        {
+          "duration": 39.00,
+          "state": "rrrGGgGrr"
+        },
+        {
+          "duration": 6.00,
+          "state": "rrryyyGrr"
+        }
+      ],
+      "total_cycle": 90
+    },
+    "1677153107": {
+      "type": "static",
+      "phases": [
+        {
+          "duration": 40.00,
+          "state": "rrrrGGggrrrrGGgg"
+        },
+        {
+          "duration": 5.00,
+          "state": "rrrryyyyrrrryyyy"
+        },
+        {
+          "duration": 40.00,
+          "state": "GGggrrrrGGggrrrr"
+        },
+        {
+          "duration": 5.00,
+          "state": "yyyyrrrryyyyrrrr"
+        }
+      ],
+      "total_cycle": 90
     }
   },
   "intersections": {
     "junction01": {
       "id": "junction01",
+      "traffic_light_id": "1166230678",
       "type": "traffic_light", 
       "x": 0.0,
       "y": 0.0
     },
     "junction02": {
       "id": "junction02",
+      "traffic_light_id": "357410392",
       "type": "traffic_light",
       "x": 0.0,
       "y": 0.0
     },
     "junction03": {
       "id": "junction03",
+      "traffic_light_id": "J3",
+      "type": "traffic_light",
+      "x": 0.0,
+      "y": 0.0
+    },
+    "junction04": {
+      "id": "junction04",
+      "traffic_light_id": "1677153087",
+      "type": "traffic_light",
+      "x": 0.0,
+      "y": 0.0
+    },
+    "junction05": {
+      "id": "junction05",
+      "traffic_light_id": "1677153107",
       "type": "traffic_light",
       "x": 0.0,
       "y": 0.0
@@ -105,7 +166,9 @@
     "intersection_ids": [
       "junction01",
       "junction02",
-      "junction03"
+      "junction03",
+      "junction04",
+      "junction05"
     ],
     "theta_1": 1.0,
     "theta_2": 0.5,
@@ -120,7 +183,7 @@
           0
         ],
         "secondary_phases": [
-          1
+          4
         ],
         "saturation_flows": {
           "main": 0.45,
@@ -141,7 +204,7 @@
           0
         ],
         "secondary_phases": [
-          1
+          2
         ],
         "saturation_flows": {
           "main": 0.4,
@@ -162,7 +225,49 @@
           0
         ],
         "secondary_phases": [
-          1
+          2
+        ],
+        "saturation_flows": {
+          "main": 0.5,
+          "secondary": 0.42
+        },
+        "turn_in_ratios": {
+          "main": 0.6,
+          "secondary": 0.5
+        },
+        "queue_lengths": {
+          "main": 12,
+          "secondary": 6
+        }
+      },
+      "junction04": {
+        "cycle_length": 90,
+        "main_phases": [
+          0
+        ],
+        "secondary_phases": [
+          2
+        ],
+        "saturation_flows": {
+          "main": 0.5,
+          "secondary": 0.42
+        },
+        "turn_in_ratios": {
+          "main": 0.6,
+          "secondary": 0.5
+        },
+        "queue_lengths": {
+          "main": 12,
+          "secondary": 6
+        }
+      },
+      "junction05": {
+        "cycle_length": 90,
+        "main_phases": [
+          2
+        ],
+        "secondary_phases": [
+          0
         ],
         "saturation_flows": {
           "main": 0.5,

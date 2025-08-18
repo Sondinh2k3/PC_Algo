@@ -25,11 +25,14 @@ class SumoSim:
     #start sumo
     #open connection with traci
     #predefined config
-    def start(self):
+    def start(self, extra_args=None):
         """Start the SUMO simulation."""
         sumo_cmd = [self.sumo_binary, "-c", self.config['config_file']
                     , "--step-length", str(self.config['step_length'])]
         
+        if extra_args:
+            sumo_cmd.extend(extra_args)
+
         if self.config['gui']:
             sumo_cmd.append("--start")
         

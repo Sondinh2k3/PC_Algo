@@ -301,7 +301,7 @@ def analyze_phuquoc_network():
     Hàm tiện ích để phân tích mạng lưới Phú Quốc
     """
     # Đường dẫn đến file network
-    net_file = "PhuQuoc/phuquoc.net.xml"
+    net_file = "../PhuQuoc/phuquoc.net.xml"
     
     if not os.path.exists(net_file):
         print(f"❌ Không tìm thấy file network: {net_file}")
