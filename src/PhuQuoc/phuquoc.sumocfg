@@ -33,6 +33,11 @@
         <no-step-log value="true"/>
     </report>
 
+    <output>
+        <tripinfo-output value="../../output/tripinfo_baseline.xml"/>
+        <edgedata-output value="../../output/edgedata_baseline.xml"/>
+    </output>
+
     <gui_only>
         <gui-settings-file value="phuquoc.view.xml"/>
     </gui_only>

@@ -89,7 +89,7 @@ def collect_data(sim_config, detector_config):
             flow_count = 0
             for det_id in e1_detectors:
                 try:
-                    flow_count += traci.inductionloop.getLastStepVehicleNumber(det_id)
+                    flow_count += traci.inductionloop.getLastIntervalVehicleNumber(det_id)
                 except traci.exceptions.TraCIException:
                     pass  # Skip if detector not found
             

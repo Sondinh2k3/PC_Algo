@@ -25,7 +25,7 @@ from data.intersection_config_manager import IntersectionConfigManager
 # === CONSTANTS ===
 KP_H = 20.0        # Proportional gain (1/hour)
 KI_H = 5.0         # Integral gain (1/hour)
-N_HAT = 150.0      # Target accumulation (vehicles)
+N_HAT = 90.0      # Target accumulation (vehicles)
 CONTROL_INTERVAL_S = 90  # Control interval (seconds)
 
 class VariableType(Enum):

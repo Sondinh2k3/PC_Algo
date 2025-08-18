@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-08-18 15:57:01 by Eclipse SUMO GUI Version 1.23.1
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="PhuQuoc/phuquoc.net.xml"/>
+        <route-files value="PhuQuoc/phuquoc.rou.xml,PhuQuoc/phuquoc-demo.rou.xml"/>
+        <additional-files value="PhuQuoc/detector.add.xml"/>
+    </input>
+
+    <output>
+        <tripinfo-output value="PhuQuoc/../../output/tripinfo_baseline.xml"/>
+        <edgedata-output value="PhuQuoc/../../output/edgedata_baseline.xml"/>
+    </output>
+
+    <time>
+        <step-length value="1"/>
+    </time>
+
+    <processing>
+        <lateral-resolution value="0.5"/>
+        <ignore-route-errors value="true"/>
+        <time-to-teleport value="50"/>
+        <tls.actuated.jam-threshold value="30"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="8814"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="PhuQuoc/phuquoc.view.xml"/>
+        <start value="true"/>
+    </gui_only>
+
+</sumoConfiguration>
+-->
+
+<detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e1_file.xsd">
+    <interval begin="0.00" end="300.00" id="e1_38" nVehContrib="17" flow="204.00" occupancy="18.48" speed="9.40" harmonicMeanSpeed="1.61" length="3.52" nVehEntered="18"/>
+    <interval begin="300.00" end="600.00" id="e1_38" nVehContrib="18" flow="216.00" occupancy="18.44" speed="6.17" harmonicMeanSpeed="1.83" length="6.46" nVehEntered="17"/>
+    <interval begin="600.00" end="710.00" id="e1_38" nVehContrib="4" flow="130.91" occupancy="89.37" speed="2.25" harmonicMeanSpeed="0.30" length="8.25" nVehEntered="5"/>
+</detector>
