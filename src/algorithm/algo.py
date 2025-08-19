@@ -14,19 +14,31 @@ from ortools.sat.python import cp_model
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Union
 from enum import Enum
+import sys
+import os
 
 # Import thư viện mới để giải MIQP phi tuyến
 from pyscipopt import Model, quicksum
 from pyscipopt.recipes.nonlinear import set_nonlinear_objective
 
+# Add project root to system path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+sys.path.append(project_root)
+print(project_root)
+
 # Import config manager
-from data.intersection_config_manager import IntersectionConfigManager
+from src.data.intersection_config_manager import IntersectionConfigManager
 
 # === CONSTANTS ===
 KP_H = 20.0        # Proportional gain (1/hour)
 KI_H = 5.0         # Integral gain (1/hour)
-N_HAT = 90.0      # Target accumulation (vehicles)
+N_HAT = 80.0      # Target accumulation (vehicles)
 CONTROL_INTERVAL_S = 90  # Control interval (seconds)
+KP_MIN = 0.0
+KP_MAX = 0.0
+KI_MIN = 100.0
+KI_MAX = 20.0
 
 class VariableType(Enum):
     """Loại biến"""
@@ -195,7 +207,8 @@ class PerimeterController:
         second_component = theta_2 * utilization_expr
 
         # Thiết lập mục tiêu cho model
-        set_nonlinear_objective(model, first_component + second_component, "minimize")
+        # set_nonlinear_objective(model, first_component + second_component, "minimize")
+        model.setObjective(first_component + second_component, "minimize")
 
         # Giải bài toán
         model.hideOutput()
