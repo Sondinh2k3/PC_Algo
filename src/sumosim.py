@@ -25,17 +25,21 @@ class SumoSim:
     #start sumo
     #open connection with traci
     #predefined config
-    def start(self, extra_args=None):
-        """Start the SUMO simulation."""
-        sumo_cmd = [self.sumo_binary, "-c", self.config['config_file']
-                    , "--step-length", str(self.config['step_length'])]
-        
-        if extra_args:
-            sumo_cmd.extend(extra_args)
+    def start(self, output_files: dict = None):
+        """Start the SUMO simulation, optionally overriding output files."""
+        sumo_cmd = [self.sumo_binary, "-c", self.config['config_file'],
+                    "--step-length", str(self.config['step_length'])]
+
+        # Add output file overrides if provided
+        if output_files:
+            if 'tripinfo' in output_files:
+                sumo_cmd.extend(["--tripinfo-output", output_files['tripinfo']])
+            if 'edgedata' in output_files:
+                sumo_cmd.extend(["--edgedata-output", output_files['edgedata']])
 
         if self.config['gui']:
             sumo_cmd.append("--start")
-        
+
         traci.start(sumo_cmd, port=self.config['port'])
         logging.info("SUMO simulation started with command: %s", ' '.join(sumo_cmd))
 

@@ -2,6 +2,7 @@ import traci
 import yaml
 import threading
 import time
+import os
 from enum import Enum
 from typing import Any, Callable, Dict, Optional
 import sched
@@ -199,7 +200,23 @@ def run_sumo_simulation():
         stop_event = threading.Event()
 
         sumo_sim = SumoSim(sim_config)
-        sumo_sim.start()
+
+        # --- NEW: Use absolute paths for output files to avoid errors ---
+        # Get project root by going up one level from the current file's directory (src)
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        output_dir = os.path.join(project_root, "output")
+        
+        # Ensure the output directory exists
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Define absolute paths for the output files
+        output_filenames = {
+            "tripinfo": os.path.join(output_dir, "tripinfo.xml"),
+            "edgedata": os.path.join(output_dir, "edgedata.xml")
+        }
+        
+        # Start SUMO with absolute paths for output files
+        sumo_sim.start(output_files=output_filenames)
 
         # Khởi tạo bộ điều khiển chu vi với shared_dict
         intersection_config_path = "intersection_config.json"
@@ -223,7 +240,7 @@ def run_sumo_simulation():
         qg_previous = 3600
 
         # --- NEW: Corrected Simulation Loop ---
-        total_simulation_steps = 3600 # Total simulation time in seconds (e.g., 1 hour)
+        total_simulation_steps = 1860 # Total simulation time in seconds (e.g., 1 hour)
         
         # Initialize n_previous with initial vehicle count
         sumo_sim.step()
@@ -254,10 +271,24 @@ def run_sumo_simulation():
                     live_queue_lengths = {}
                     for int_id, detectors in solver_detectors.items():
                         try:
-                            main_queue = traci.lanearea.getLastStepVehicleNumber(detectors['main_queue_detector'])
+                            # --- FIX: Handle single or multiple main queue detectors ---
+                            main_queue = 0
+                            main_detectors = detectors.get('main_queue_detector', [])
+                            if not isinstance(main_detectors, list):
+                                main_detectors = [main_detectors]  # Treat a single string as a list
+                            
+                            for detector_id in main_detectors:
+                                main_queue += traci.lanearea.getLastStepVehicleNumber(detector_id)
+
+                            # --- FIX: Handle single or multiple secondary queue detectors ---
                             sec_queue = 0
-                            for detector_id in detectors['secondary_queue_detector']:
+                            sec_detectors = detectors.get('secondary_queue_detector', [])
+                            if not isinstance(sec_detectors, list):
+                                sec_detectors = [sec_detectors] # Treat a single string as a list
+
+                            for detector_id in sec_detectors:
                                 sec_queue += traci.lanearea.getLastStepVehicleNumber(detector_id)
+                            
                             live_queue_lengths[int_id] = {'main': main_queue, 'secondary': sec_queue}
                         except traci.TraCIException as e:
                             print(f"[WARNING] Could not get queue data for intersection {int_id}: {e}")

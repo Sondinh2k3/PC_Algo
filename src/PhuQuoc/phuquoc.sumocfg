@@ -36,6 +36,7 @@
     <output>
         <tripinfo-output value="../../output/tripinfo_baseline.xml"/>
         <edgedata-output value="../../output/edgedata_baseline.xml"/>
+        <vehroute-output value="../../output/vehroutes_baseline.xml"/>
     </output>
 
     <gui_only>
