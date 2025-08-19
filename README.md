@@ -166,3 +166,8 @@ python main.py mock
 ```
 
 Bằng cách tuân theo các bước trên, bạn có thể cấu hình và áp dụng hệ thống điều khiển này cho bất kỳ mạng lưới giao thông nào được mô hình hóa trong SUMO.
+
+# Lệnh tạo route (cần có 2 file: phuquoc.rou.xml và phuquoc.conf.xml)
+
+python 'C:\Program Files (x86)\Eclipse\Sumo\tools\randomTrips.py' -c .\phuquoc.conf.xml
+=> Tạo ra file phuquoc-demo.rou.xml
