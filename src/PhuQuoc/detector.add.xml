@@ -4,6 +4,9 @@
 -->
 
 <additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <!-- EdgeData definition -->
+    <edgeData id="ed_config" freq="90" file="edgedata.xml" />
+
     <!-- Detectors -->
     <inductionLoop id="e1_0" lane="482169086#0_1" pos="1309.43" period="300.00" file="e1_0.xml"/>
     <inductionLoop id="e1_00" lane="-482169086#8_0" pos="1318.17" period="10.00" file="e1_1.xml"/>

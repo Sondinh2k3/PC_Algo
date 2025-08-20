@@ -34,8 +34,6 @@ class SumoSim:
         if output_files:
             if 'tripinfo' in output_files:
                 sumo_cmd.extend(["--tripinfo-output", output_files['tripinfo']])
-            if 'edgedata' in output_files:
-                sumo_cmd.extend(["--edgedata-output", output_files['edgedata']])
             if 'vehroute' in output_files:
                 sumo_cmd.extend(["--vehroute-output", output_files['vehroute']])
 
