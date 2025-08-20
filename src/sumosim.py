@@ -27,14 +27,18 @@ class SumoSim:
     #start sumo
     #open connection with traci
     #predefined config
-    def start(self, extra_args=None):
+    def start(self, output_files: dict = None):
         """Start the SUMO simulation."""
         sumo_cmd = [self.sumo_binary, "-c", self.config['config_file'],
                     "--step-length", str(self.config['step_length']),
                     "--delay", str(0)]
-        
-        if extra_args:
-            sumo_cmd.extend(extra_args)
+
+        # Add output file overrides if provided
+        if output_files:
+            if 'tripinfo' in output_files:
+                sumo_cmd.extend(["--tripinfo-output", output_files['tripinfo']])
+            if 'edgedata' in output_files:
+                sumo_cmd.extend(["--edgedata-output", output_files['edgedata']])
 
         if self.config['gui']:
             sumo_cmd.append("--start")

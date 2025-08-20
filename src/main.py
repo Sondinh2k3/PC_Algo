@@ -214,6 +214,7 @@ def run_sumo_simulation():
             "tripinfo": os.path.join(output_dir, "tripinfo.xml"),
             "edgedata": os.path.join(output_dir, "edgedata.xml")
         }
+        print(output_filenames)
         
         # Start SUMO with absolute paths for output files
         sumo_sim.start(output_files=output_filenames)

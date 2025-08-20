@@ -28,11 +28,11 @@ sys.path.append(project_root)
 print(project_root)
 
 # Import config manager
-from src.data.intersection_config_manager import IntersectionConfigManager
+from data.intersection_config_manager import IntersectionConfigManager
 
 # === CONSTANTS ===
-KP_H = 20.0        # Proportional gain (1/hour)
-KI_H = 5.0         # Integral gain (1/hour)
+KP_H = 71.0        # Proportional gain (1/hour)
+KI_H = 12.0         # Integral gain (1/hour)
 N_HAT = 80.0      # Target accumulation (vehicles)
 CONTROL_INTERVAL_S = 90  # Control interval (seconds)
 KP_MIN = 0.0
@@ -207,8 +207,8 @@ class PerimeterController:
         second_component = theta_2 * utilization_expr
 
         # Thiết lập mục tiêu cho model
-        # set_nonlinear_objective(model, first_component + second_component, "minimize")
-        model.setObjective(first_component + second_component, "minimize")
+        set_nonlinear_objective(model, first_component + second_component, "minimize")
+        # model.setObjective(first_component + second_component, "minimize")
 
         # Giải bài toán
         model.hideOutput()

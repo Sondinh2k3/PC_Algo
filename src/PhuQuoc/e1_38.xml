@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-08-19 15:11:10 by Eclipse SUMO GUI Version 1.23.1
+<!-- generated on 2025-08-20 10:39:00 by Eclipse SUMO sumo Version 1.24.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="PhuQuoc/phuquoc.net.xml"/>
-        <route-files value="PhuQuoc/phuquoc.rou.xml,PhuQuoc/phuquoc-demo.rou.xml"/>
-        <additional-files value="PhuQuoc/detector.add.xml"/>
+        <net-file value="src\PhuQuoc/phuquoc.net.xml"/>
+        <route-files value="src\PhuQuoc/phuquoc.rou.xml,src\PhuQuoc/phuquoc-demo.rou.xml"/>
+        <additional-files value="src\PhuQuoc/detector.add.xml"/>
     </input>
 
     <output>
-        <tripinfo-output value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\output\tripinfo.xml"/>
-        <vehroute-output value="PhuQuoc/../../output/vehroutes_baseline.xml"/>
-        <edgedata-output value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\output\edgedata.xml"/>
+        <tripinfo-output value="src\PhuQuoc/../../output/tripinfo_baseline.xml"/>
+        <vehroute-output value="src\PhuQuoc/../../output/vehroutes_baseline.xml"/>
+        <edgedata-output value="src\PhuQuoc/../../output/edgedata_baseline.xml"/>
     </output>
 
     <time>
@@ -42,19 +42,8 @@
     </traci_server>
 
     <gui_only>
-        <gui-settings-file value="PhuQuoc/phuquoc.view.xml"/>
-        <start value="true"/>
+        <gui-settings-file value="src\PhuQuoc/phuquoc.view.xml"/>
+        <delay value="0"/>
     </gui_only>
 
 </sumoConfiguration>
--->
-
-<detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e1_file.xsd">
-    <interval begin="0.00" end="300.00" id="e1_38" nVehContrib="20" flow="240.00" occupancy="39.29" speed="7.46" harmonicMeanSpeed="2.99" length="4.59" nVehEntered="21"/>
-    <interval begin="300.00" end="600.00" id="e1_38" nVehContrib="22" flow="264.00" occupancy="40.52" speed="5.85" harmonicMeanSpeed="0.94" length="5.14" nVehEntered="21"/>
-    <interval begin="600.00" end="900.00" id="e1_38" nVehContrib="22" flow="264.00" occupancy="62.97" speed="4.98" harmonicMeanSpeed="0.43" length="5.19" nVehEntered="22"/>
-    <interval begin="900.00" end="1200.00" id="e1_38" nVehContrib="18" flow="216.00" occupancy="48.44" speed="5.53" harmonicMeanSpeed="0.81" length="5.94" nVehEntered="19"/>
-    <interval begin="1200.00" end="1500.00" id="e1_38" nVehContrib="41" flow="492.00" occupancy="67.23" speed="4.16" harmonicMeanSpeed="0.78" length="4.52" nVehEntered="40"/>
-    <interval begin="1500.00" end="1800.00" id="e1_38" nVehContrib="28" flow="336.00" occupancy="50.12" speed="6.58" harmonicMeanSpeed="2.79" length="4.92" nVehEntered="29"/>
-    <interval begin="1800.00" end="1860.00" id="e1_38" nVehContrib="8" flow="480.00" occupancy="91.81" speed="3.76" harmonicMeanSpeed="1.16" length="5.36" nVehEntered="8"/>
-</detector>

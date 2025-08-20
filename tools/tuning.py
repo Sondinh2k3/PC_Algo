@@ -128,6 +128,7 @@ def run_sumo(sim_config, detector_config, params):
 
         # Initialize SUMO simulation
         sim_config['config_file'] = os.path.join('src', sim_config['config_file'])
+        sim_config['gui'] = None
         sumo_sim = SumoSim(sim_config)
         sumo_sim.start()
 
