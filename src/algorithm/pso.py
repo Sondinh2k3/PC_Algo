@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Callable, Tuple, List, Optional
+import multiprocessing as mp
+import time
 
 N_PARTICLES = 25
 MAX_ITERATIONS = 50
@@ -236,6 +238,287 @@ class PSO:
         plt.grid(True)
         plt.show()
 
+class PSO_MultiCPUs:
+    """
+    High-performance Particle Swarm Optimization for 2D parameter tuning [Kp, Ki]
+    with multiprocessing support for maximum speed
+    """
+    
+    def __init__(self, 
+                 objective_function: Callable[[np.ndarray], float],
+                 bounds: Tuple[Tuple[float, float], Tuple[float, float]],
+                 n_particles: int = 30,
+                 max_iterations: int = 100,
+                 w: float = 0.9,
+                 c1: float = 2.0,
+                 c2: float = 2.0,
+                 use_multiprocessing: bool = True,
+                 n_processes: Optional[int] = None,
+                 random_seed: Optional[int] = None):
+        """
+        Initialize Fast PSO optimizer
+        
+        Parameters:
+        -----------
+        objective_function : Callable
+            Function to minimize f(x) where x is [Kp, Ki]
+        bounds : Tuple of tuples
+            ((Kp_min, Kp_max), (Ki_min, Ki_max))
+        n_particles : int
+            Number of particles in swarm
+        max_iterations : int
+            Maximum number of iterations
+        w : float
+            Inertia weight (0.4-0.9)
+        c1 : float
+            Cognitive parameter (1.4-2.0)
+        c2 : float
+            Social parameter (1.4-2.0)
+        use_multiprocessing : bool
+            Enable parallel fitness evaluation
+        n_processes : int, optional
+            Number of processes (default: CPU count)
+        random_seed : int, optional
+            Random seed for reproducibility
+        """
+        self.objective_function = objective_function
+        self.bounds = np.array(bounds)
+        self.n_particles = n_particles
+        self.max_iterations = max_iterations
+        self.w = w
+        self.c1 = c1
+        self.c2 = c2
+        self.use_multiprocessing = use_multiprocessing
+        
+        # Set random seed
+        if random_seed is not None:
+            np.random.seed(random_seed)
+        
+        # Configure multiprocessing
+        if use_multiprocessing:
+            self.n_processes = n_processes if n_processes else mp.cpu_count()
+            self.n_processes = min(self.n_processes, n_particles)  # Don't exceed particle count
+            self.pool = mp.Pool(processes=self.n_processes)
+        else:
+            self.n_processes = 1
+            self.pool = None
+        
+        # Initialize swarm
+        self._initialize_swarm()
+        
+        # Tracking
+        self.history = {
+            'best_fitness': [],
+            'best_position': [],
+            'iteration_times': [],
+            'convergence_data': []
+        }
+        
+    def _initialize_swarm(self):
+        """Initialize particle positions and velocities efficiently"""
+        # Random positions within bounds
+        self.positions = np.random.uniform(
+            low=self.bounds[:, 0],
+            high=self.bounds[:, 1],
+            size=(self.n_particles, 2)
+        )
+        
+        # Initialize velocities (10% of search space range)
+        velocity_range = (self.bounds[:, 1] - self.bounds[:, 0]) * 0.1
+        self.velocities = np.random.uniform(
+            low=-velocity_range,
+            high=velocity_range,
+            size=(self.n_particles, 2)
+        )
+        
+        # Evaluate initial fitness
+        self.fitness = self._evaluate_fitness(self.positions)
+        
+        # Initialize personal bests
+        self.personal_best_positions = self.positions.copy()
+        self.personal_best_fitness = self.fitness.copy()
+        
+        # Initialize global best
+        best_idx = np.argmin(self.fitness)
+        self.global_best_position = self.positions[best_idx].copy()
+        self.global_best_fitness = self.fitness[best_idx]
+        
+    def _evaluate_fitness(self, positions: np.ndarray) -> np.ndarray:
+        """Evaluate fitness for all particles (parallel or sequential)"""
+        if self.pool is not None:
+            # Parallel evaluation
+            fitness_values = self.pool.map(self.objective_function, positions)
+            return np.array(fitness_values)
+        else:
+            # Sequential evaluation
+            return np.array([self.objective_function(pos) for pos in positions])
+    
+    def _update_velocities(self):
+        """Update all particle velocities using vectorized operations"""
+        # Random factors for each particle
+        r1 = np.random.random((self.n_particles, 2))
+        r2 = np.random.random((self.n_particles, 2))
+        
+        # Vectorized velocity update
+        inertia = self.w * self.velocities
+        cognitive = self.c1 * r1 * (self.personal_best_positions - self.positions)
+        social = self.c2 * r2 * (self.global_best_position - self.positions)
+        
+        new_velocities = inertia + cognitive + social
+        
+        # Velocity clamping (20% of search space)
+        velocity_max = (self.bounds[:, 1] - self.bounds[:, 0]) * 0.2
+        self.velocities = np.clip(new_velocities, -velocity_max, velocity_max)
+    
+    def _update_positions(self):
+        """Update all particle positions using vectorized operations"""
+        # Update positions
+        new_positions = self.positions + self.velocities
+        
+        # Boundary handling - clamp to bounds
+        self.positions = np.clip(new_positions, self.bounds[:, 0], self.bounds[:, 1])
+    
+    def _update_bests(self):
+        """Update personal and global bests efficiently"""
+        # Find particles that improved
+        improved = self.fitness < self.personal_best_fitness
+        
+        # Update personal bests
+        self.personal_best_fitness[improved] = self.fitness[improved]
+        self.personal_best_positions[improved] = self.positions[improved]
+        
+        # Update global best
+        best_idx = np.argmin(self.fitness)
+        if self.fitness[best_idx] < self.global_best_fitness:
+            self.global_best_fitness = self.fitness[best_idx]
+            self.global_best_position = self.positions[best_idx].copy()
+    
+    def optimize(self, verbose: bool = True) -> Tuple[np.ndarray, float]:
+        """
+        Run PSO optimization
+        
+        Returns:
+        --------
+        best_position : np.ndarray
+            Best [Kp, Ki] parameters found
+        best_fitness : float
+            Best fitness value
+        """
+        if verbose:
+            mode = f"{'Parallel' if self.pool else 'Sequential'}"
+            if self.pool:
+                mode += f" ({self.n_processes} processes)"
+            print(f"FastPSO: {mode} mode, {self.n_particles} particles, {self.max_iterations} iterations")
+        
+        start_time = time.time()
+        
+        for iteration in range(self.max_iterations):
+            iter_start = time.time()
+            
+            # Update particle dynamics
+            self._update_velocities()
+            self._update_positions()
+            
+            # Evaluate fitness
+            self.fitness = self._evaluate_fitness(self.positions)
+            
+            # Update bests
+            self._update_bests()
+            
+            # Record iteration time
+            iter_time = time.time() - iter_start
+            self.history['iteration_times'].append(iter_time)
+            
+            # Store best results
+            self.history['best_fitness'].append(self.global_best_fitness)
+            self.history['best_position'].append(self.global_best_position.copy())
+            
+            # Progress reporting
+            if verbose and (iteration + 1) % max(1, self.max_iterations // 10) == 0:
+                progress = (iteration + 1) / self.max_iterations * 100
+                avg_time = np.mean(self.history['iteration_times'][-10:])
+                print(f"Progress: {progress:5.1f}% | "
+                      f"Best: {self.global_best_fitness:.6f} | "
+                      f"Kp: {self.global_best_position[0]:.4f} | "
+                      f"Ki: {self.global_best_position[1]:.4f} | "
+                      f"Time/iter: {avg_time:.3f}s")
+        
+        total_time = time.time() - start_time
+        
+        if verbose:
+            avg_iter_time = np.mean(self.history['iteration_times'])
+            print(f"\nOptimization completed in {total_time:.2f}s")
+            print(f"Average time per iteration: {avg_iter_time:.3f}s")
+            if self.pool:
+                theoretical_sequential = avg_iter_time * self.n_processes
+                speedup = theoretical_sequential / avg_iter_time
+                print(f"Estimated speedup: {speedup:.1f}x")
+        
+        return self.global_best_position, self.global_best_fitness
+    
+    def plot_results(self):
+        """Plot optimization results"""
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        
+        # Convergence plot
+        axes[0, 0].semilogy(self.history['best_fitness'])
+        axes[0, 0].set_xlabel('Iteration')
+        axes[0, 0].set_ylabel('Best Fitness (log scale)')
+        axes[0, 0].set_title('Convergence History')
+        axes[0, 0].grid(True)
+        
+        # Parameter evolution
+        kp_history = [pos[0] for pos in self.history['best_position']]
+        ki_history = [pos[1] for pos in self.history['best_position']]
+        
+        axes[0, 1].plot(kp_history, label='Kp', linewidth=2)
+        axes[0, 1].plot(ki_history, label='Ki', linewidth=2)
+        axes[0, 1].set_xlabel('Iteration')
+        axes[0, 1].set_ylabel('Parameter Value')
+        axes[0, 1].set_title('Parameter Evolution')
+        axes[0, 1].legend()
+        axes[0, 1].grid(True)
+        
+        # Timing analysis
+        if self.history['iteration_times']:
+            axes[1, 0].plot(self.history['iteration_times'])
+            axes[1, 0].set_xlabel('Iteration')
+            axes[1, 0].set_ylabel('Time (seconds)')
+            axes[1, 0].set_title('Iteration Times')
+            axes[1, 0].grid(True)
+            
+            # Add average line
+            avg_time = np.mean(self.history['iteration_times'])
+            axes[1, 0].axhline(y=avg_time, color='r', linestyle='--', 
+                              label=f'Avg: {avg_time:.3f}s')
+            axes[1, 0].legend()
+        
+        # Current particle positions
+        axes[1, 1].scatter(self.positions[:, 0], self.positions[:, 1], 
+                          alpha=0.6, s=50, label='Particles')
+        axes[1, 1].scatter(self.global_best_position[0], self.global_best_position[1],
+                          color='red', s=200, marker='*', label='Global Best')
+        axes[1, 1].set_xlabel('Kp')
+        axes[1, 1].set_ylabel('Ki')
+        axes[1, 1].set_title('Final Particle Distribution')
+        axes[1, 1].set_xlim(self.bounds[0])
+        axes[1, 1].set_ylim(self.bounds[1])
+        axes[1, 1].legend()
+        axes[1, 1].grid(True)
+        
+        plt.tight_layout()
+        plt.show()
+    
+    def close(self):
+        """Clean up multiprocessing resources"""
+        if self.pool is not None:
+            self.pool.close()
+            self.pool.join()
+            self.pool = None
+    
+    def __del__(self):
+        """Destructor to clean up pool"""
+        self.close()
 
 # Example usage and test functions
 def example_objective_function(params: np.ndarray) -> float:

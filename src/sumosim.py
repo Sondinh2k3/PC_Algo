@@ -3,6 +3,8 @@ import os  # Module provides functions to handle file paths, directories, enviro
 import sys  # Module provides access to Python-specific system parameters and functions
 import subprocess
 import logging
+import signal
+import time
 
 # Step 2: Establish path to SUMO (SUMO_HOME)
 if 'SUMO_HOME' in os.environ:
@@ -26,29 +28,24 @@ class SumoSim:
     #open connection with traci
     #predefined config
     def start(self, output_files: dict = None):
-        """Start the SUMO simulation, optionally overriding output files."""
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        config_file_path = os.path.join(project_root, 'src', self.config['config_file'])
-
-        sumo_cmd = [self.sumo_binary, "-c", config_file_path,
-                    "--step-length", str(self.config['step_length'])]
+        """Start the SUMO simulation."""
+        sumo_cmd = [self.sumo_binary, "-c", self.config['config_file'],
+                    "--step-length", str(self.config['step_length']),
+                    "--delay", str(0)]
 
         # Add output file overrides if provided
         if output_files:
             if 'tripinfo' in output_files:
                 sumo_cmd.extend(["--tripinfo-output", output_files['tripinfo']])
-            if 'vehroute' in output_files:
-                sumo_cmd.extend(["--vehroute-output", output_files['vehroute']])
+            if 'edgedata' in output_files:
+                sumo_cmd.extend(["--edgedata-output", output_files['edgedata']])
 
         if self.config['gui']:
             sumo_cmd.append("--start")
-
-        try:
-            traci.start(sumo_cmd, port=self.config['port'])
-            logging.info("SUMO simulation started with command: %s", ' '.join(sumo_cmd))
-        except Exception as e:
-            print(f"Error starting SUMO: {e}")
-            sys.exit(1)
+            sumo_cmd.append("--quit-on-end")
+        
+        traci.start(sumo_cmd, port=self.config['port'])
+        logging.info("SUMO simulation started with command: %s", ' '.join(sumo_cmd))
 
     def step(self):
         """Perform a simulation step."""
@@ -60,6 +57,3 @@ class SumoSim:
     
     def get_step_counts(self)-> int:
         return self.step_count
-
-
-
