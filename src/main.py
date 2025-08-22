@@ -3,96 +3,29 @@ import yaml
 import threading
 import time
 import os
-from enum import Enum
-from typing import Any, Callable, Dict, Optional
-import sched
-from datetime import datetime
 import sys
 from multiprocessing import Manager
+from typing import Dict
 
-from neo4j import GraphDatabase
-
-from traci import trafficlight, lanearea, inductionloop
-import libsumo
-
+# Import các thành phần từ các module khác
 from sumosim import SumoSim
-
 from data.collector.SqlCollector import SqlCollector
-from algorithm.algo import PerimeterController, KP_H, KI_H, N_HAT, CONTROL_INTERVAL_S
 from data.intersection_config_manager import IntersectionConfigManager
 from data.detector_config_manager import DetectorConfigManager
 
-
-# =================================================================
-# MOCK SIMULATION (from old algo.py)
-# This simulation uses mock data to test the controller logic
-# without needing a SUMO connection.
-# =================================================================
-def run_mock_simulation():
-    """
-    Mô phỏng hoạt động của hệ thống điều khiển chu vi với dữ liệu giả lập.
-    """
-    print("🚦 BẮT ĐẦU MÔ PHỎNG (DỮ LIỆU GIẢ LẬP)")
-    print("="*70)
-    
-    # Khởi tạo bộ điều khiển
-    try:
-        # Path is relative to the execution folder (src)
-        controller = PerimeterController(config_file="intersection_config.json")
-    except FileNotFoundError:
-        print("\n[LỖI] Không tìm thấy file 'intersection_config.json'.")
-        print("Vui lòng đảm bảo file cấu hình tồn tại trong thư mục src.")
-        return
-    
-    # Dữ liệu mô phỏng: tình huống tắc nghẽn dần tăng rồi giảm
-    simulation_data = [
-        {'step': 1, 'n_k': 100, 'description': 'Giao thông bình thường'},
-        {'step': 2, 'n_k': 120, 'description': 'Lưu lượng tăng nhẹ'},
-        {'step': 3, 'n_k': 140, 'description': 'Gần ngưỡng kích hoạt'},
-        {'step': 4, 'n_k': 160, 'description': 'Vượt ngưỡng - Kích hoạt điều khiển'},
-        {'step': 5, 'n_k': 170, 'description': 'Tình trạng tắc nghẽn'},
-        {'step': 6, 'n_k': 165, 'description': 'Bắt đầu cải thiện'},
-        {'step': 7, 'n_k': 140, 'description': 'Tiếp tục giảm'},
-        {'step': 8, 'n_k': 110, 'description': 'Dưới ngưỡng hủy - Tắt điều khiển'},
-        {'step': 9, 'n_k': 95, 'description': 'Trở lại bình thường'},
-    ]
-    
-    # Khởi tạo trạng thái
-    n_previous = 100.0
-    qg_previous = 200.0  # xe/giờ
-    
-    print(f"\n THÔNG TIN MÔ PHỎNG:")
-    print(f"   • Ngưỡng mục tiêu n̂: {N_HAT} xe")
-    # print(f"   • Khoảng điều khiển: {controller.control_interval_h * 3600}s")
-    print(f"   • Số bước mô phỏng: {len(simulation_data)} bước")
-    print("\n" + "="*70)
-    
-    # Chạy mô phỏng
-    for data in simulation_data:
-        step = data['step']
-        n_current = data['n_k']
-        description = data['description']
-        
-        print(f"\n CHU KỲ {step}: {description}")
-        
-        n_result, qg_result, active = controller.run_simulation_step(
-            n_current, n_previous, qg_previous
-        )
-        
-        # Cập nhật cho chu kỳ tiếp theo
-        n_previous = n_current
-        qg_previous = qg_result
-        
-        # Thêm delay để quan sát
-        time.sleep(1)
-    
-    print(" KẾT THÚC MÔ PHỎNG (DỮ LIỆU GIẢ LẬP)")
-    print("="*70)
+# Import thuật toán và hàm chạy thử nghiệm từ module algo
+from algorithm.algo import (
+    PerimeterController, 
+    KP_H, 
+    KI_H, 
+    N_HAT, 
+    CONTROL_INTERVAL_S,
+    run_perimeter_control_mock_test
+)
 
 
 # =================================================================
-# REAL SUMO SIMULATION (original main.py logic)
-# This simulation connects to SUMO and a database for a live run.
+# REAL SUMO SIMULATION
 # =================================================================
 
 def traffic_light_controller(shared_dict: Dict, config_file: str, stop_event: threading.Event):
@@ -101,7 +34,6 @@ def traffic_light_controller(shared_dict: Dict, config_file: str, stop_event: th
     """
     print("[CONTROLLER THREAD] Bắt đầu luồng điều khiển đèn.")
     config_manager = IntersectionConfigManager(config_file)
-    # intersection_ids are now ["junction01", "junction02", ...]
     intersection_ids = config_manager.get_intersection_ids()
 
     while not stop_event.is_set():
@@ -109,122 +41,115 @@ def traffic_light_controller(shared_dict: Dict, config_file: str, stop_event: th
             if shared_dict.get('is_active', False):
                 green_times = shared_dict.get('green_times', None)
                 if green_times:
-                    # Tạo một bản sao để tránh lỗi thay đổi kích thước dict trong khi lặp
                     current_green_times = green_times.copy()
-                    for int_id in intersection_ids: # int_id is "junction01", etc.
+                    for int_id in intersection_ids:
                         if int_id in current_green_times:
-                            # Get the actual traffic light ID for SUMO
                             tl_id = config_manager.get_traffic_light_id(int_id)
                             if not tl_id:
-                                print(f"[CONTROLLER THREAD] Warning: No traffic_light_id found for intersection {int_id}. Skipping.")
+                                print(f"[CONTROLLER THREAD] Warning: No traffic_light_id for intersection {int_id}.")
                                 continue
 
                             phase_info = config_manager.get_phase_info(int_id)
+                            if not phase_info:
+                                continue
+
+                            main_phases = phase_info.get('p', {}).get('phase_indices', [])
+                            secondary_phases = [s_phase['phase_indices'][0] for s_phase in phase_info.get('s', []) if s_phase.get('phase_indices')]
+
                             new_times = current_green_times[int_id]
                             
-                            # Get the current program logic for the traffic light
                             try:
                                 logic = traci.trafficlight.getCompleteRedYellowGreenDefinition(tl_id)[0]
                                 
-                                # Update the duration for main phases
-                                for phase_index in phase_info.get('main_phases', []):
+                                for phase_index in main_phases:
                                     if 0 <= phase_index < len(logic.phases):
-                                        logic.phases[phase_index].duration = new_times['main']
+                                        logic.phases[phase_index].duration = new_times['p']
 
-                                # Update the duration for secondary phases
-                                for phase_index in phase_info.get('secondary_phases', []):
-                                    if 0 <= phase_index < len(logic.phases):
-                                        logic.phases[phase_index].duration = new_times['secondary']
+                                for i, phase_index in enumerate(secondary_phases):
+                                    if 0 <= phase_index < len(logic.phases) and i < len(new_times['s']):
+                                        logic.phases[phase_index].duration = new_times['s'][i]
                                 
-                                # Set the new program logic for the traffic light
                                 traci.trafficlight.setCompleteRedYellowGreenDefinition(tl_id, logic)
                             except traci.TraCIException as e:
-                                print(f"[CONTROLLER THREAD] Error updating TLS {tl_id} for intersection {int_id}: {e}")
+                                print(f"[CONTROLLER THREAD] Error updating TLS {tl_id}: {e}")
             
-            # Tạm dừng để giảm tải CPU
-            time.sleep(1) 
+            time.sleep(1)
 
         except Exception as e:
             print(f"[CONTROLLER THREAD] Lỗi trong luồng điều khiển: {e}")
-            # Có thể thêm logic để thử kết nối lại hoặc thoát một cách an toàn
             break
     
     print("[CONTROLLER THREAD] Dừng luồng điều khiển đèn.")
 
-
-# Đọc file cấu hình mô phỏng và trích xuất ra phần cấu hình giành riêng cho SUMO
-def load_simulation_config(config_path)-> dict:
+def load_simulation_config(config_path: str) -> dict:
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
-        if config['type'] == 'sumo': 
-            return config['config']
+        if config.get('type') == 'sumo': 
+            return config.get('config', {})
         else:
             raise ValueError("Unsupported simulation type. Only 'sumo' is supported.")
-            
-        
+
 def load_application_config(config_path: str) -> dict:
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
         if config is not None:
             return config
         else:
-            raise ValueError("Application configuration not found.")  
+            raise ValueError("Application configuration not found.")
 
 def run_sumo_simulation():
-    # Corrected paths to be relative to the `src` directory
-    sim_config = load_simulation_config(config_path="config/simulation.yml")
-    app_config = load_application_config(config_path="config/application.yml")
-    detector_config_mgr = DetectorConfigManager(config_file="config/detector_config.json")
+    """Hàm chính để khởi tạo và chạy mô phỏng SUMO thực tế."""
+    # --- CÀI ĐẶT CHO VIỆC LẤY MẪU, TỔNG HỢP VÀ ĐIỀU KHIỂN ---
+    SAMPLING_INTERVAL_S = 10      # Lấy dữ liệu mỗi 10 giây
+    AGGREGATION_INTERVAL_S = 50   # Tổng hợp dữ liệu mỗi 50 giây
+    # CONTROL_INTERVAL_S được import từ algo.py và có giá trị là 90 giây
 
-    # Initialize database connection
-    if app_config is None:
-        raise ValueError("Failed to load application configuration.")
-    else:
-        sql_conn = SqlCollector(
-            host=app_config['mysql']["host"],
-            port=app_config['mysql']["port"],
-            user=app_config['mysql']["user"],
-            password=app_config['mysql']["password"], 
-            database=app_config['mysql']["database"]
-        )
+    # Xác định đường dẫn tuyệt đối cho các file cấu hình
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    sim_config_path = os.path.join(project_root, 'src', 'config', 'simulation.yml')
+    app_config_path = os.path.join(project_root, 'src', 'config', 'application.yml')
+    detector_config_path = os.path.join(project_root, 'src', 'config', 'detector_config.json')
+    intersection_config_path = os.path.join(project_root, 'src', 'intersection_config.json')
 
-    # Get detector IDs from the new config manager
+    # Load cấu hình
+    sim_config = load_simulation_config(sim_config_path)
+    app_config = load_application_config(app_config_path)
+    detector_config_mgr = DetectorConfigManager(detector_config_path)
+
+    # Khởi tạo kết nối DB
+    sql_conn = SqlCollector(
+        host=app_config['mysql']["host"],
+        port=app_config['mysql']["port"],
+        user=app_config['mysql']["user"],
+        password=app_config['mysql']["password"], 
+        database=app_config['mysql']["database"]
+    )
+
+    # Lấy ID của các detector
     algorithm_detector_ids = detector_config_mgr.get_algorithm_input_detectors()
     solver_detectors = detector_config_mgr.get_solver_input_detectors()
     print(f"[INFO] Found {len(algorithm_detector_ids)} detectors for algorithm input.")
-    print(f"[INFO] Found {len(solver_detectors)} intersections with detectors for solver input.")
+    print(f"[INFO] Found {len(solver_detectors)} intersections for solver input.")
 
-    # Sử dụng Manager để tạo shared_dict
     with Manager() as manager:
         shared_dict = manager.dict()
         stop_event = threading.Event()
 
         sumo_sim = SumoSim(sim_config)
 
-        # --- NEW: Use absolute paths for output files to avoid errors ---
-        # Get project root by going up one level from the current file's directory (src)
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        # Định nghĩa đường dẫn output tuyệt đối
         output_dir = os.path.join(project_root, "output")
-        
-        # Ensure the output directory exists
         os.makedirs(output_dir, exist_ok=True)
-
-        # Define absolute paths for the output files
         output_filenames = {
             "tripinfo": os.path.join(output_dir, "tripinfo.xml"),
-            "edgedata": os.path.join(output_dir, "edgedata.xml")
+            "vehroute": os.path.join(output_dir, "vehroutes.xml")
         }
-        print(output_filenames)
         
-        # Start SUMO with absolute paths for output files
         sumo_sim.start(output_files=output_filenames)
 
-        # Khởi tạo bộ điều khiển chu vi với shared_dict
-        intersection_config_path = "intersection_config.json"
+        # Khởi tạo bộ điều khiển, sử dụng chu kỳ 90s mặc định
         controller = PerimeterController(
-            kp=KP_H, 
-            ki=KI_H, 
-            n_hat=N_HAT, 
+            kp=KP_H, ki=KI_H, n_hat=N_HAT, 
             config_file=intersection_config_path,
             shared_dict=shared_dict
         )
@@ -236,83 +161,92 @@ def run_sumo_simulation():
         )
         controller_thread.start()
 
-        n_current = 0
         n_previous = 0
         qg_previous = 3600
+        total_simulation_steps = 1820
 
-        # --- NEW: Corrected Simulation Loop ---
-        total_simulation_steps = 1860 # Total simulation time in seconds (e.g., 1 hour)
+        # --- BIẾN LƯU TRỮ DỮ LIỆU ---
+        n_samples = []
+        queue_samples = {int_id: {'main': [], 'secondary': []} for int_id in solver_detectors.keys()}
         
-        # Initialize n_previous with initial vehicle count
-        sumo_sim.step()
-        n_previous = 0
-        for detector_id in algorithm_detector_ids:
-            try:
-                n_previous += traci.lanearea.getLastStepVehicleNumber(detector_id)
-            except traci.TraCIException as e:
-                print(f"[WARNING] Could not get initial data for algorithm detector {detector_id}: {e}")
+        # Biến lưu trữ dữ liệu tổng hợp mới nhất
+        latest_aggregated_n = 0
+        latest_aggregated_queue_lengths = {}
 
+        # Lấy giá trị ban đầu
+        sumo_sim.step()
+        try:
+            n_previous = sum(traci.lanearea.getLastStepVehicleNumber(det_id) for det_id in algorithm_detector_ids)
+            latest_aggregated_n = n_previous
+        except traci.TraCIException as e:
+            print(f"[WARNING] Could not get initial data: {e}")
+            n_previous = 0
 
         try:
             while sumo_sim.get_step_counts() < total_simulation_steps:
-                sumo_sim.step()  # Advance the simulation by one step
+                current_step = sumo_sim.get_step_counts()
+                sumo_sim.step()
 
-                # Run controller only at the specified interval
-                if sumo_sim.get_step_counts() % CONTROL_INTERVAL_S == 0:
-                    
-                    # 1. Get current total vehicle count for the algorithm
-                    n_current = 0
+                # --- BƯỚC 1: THU THẬP DỮ LIỆU MẪU (mỗi 10 giây) ---
+                if current_step % SAMPLING_INTERVAL_S == 0:
+                    n_sample = 0
                     for detector_id in algorithm_detector_ids:
                         try:
-                            n_current += traci.lanearea.getLastStepVehicleNumber(detector_id)
-                        except traci.TraCIException as e:
-                            print(f"[WARNING] Could not get data for algorithm detector {detector_id}: {e}")
+                            n_sample += traci.lanearea.getLastStepVehicleNumber(detector_id)
+                        except traci.TraCIException:
+                            pass
+                    n_samples.append(n_sample)
 
-                    # 2. Get current queue lengths for the solver
-                    live_queue_lengths = {}
                     for int_id, detectors in solver_detectors.items():
                         try:
-                            # --- FIX: Handle single or multiple main queue detectors ---
-                            main_queue = 0
-                            main_detectors = detectors.get('main_queue_detector', [])
-                            if not isinstance(main_detectors, list):
-                                main_detectors = [main_detectors]  # Treat a single string as a list
-                            
-                            for detector_id in main_detectors:
-                                main_queue += traci.lanearea.getLastStepVehicleNumber(detector_id)
+                            main_q = sum(traci.lanearea.getLastStepVehicleNumber(d) for d in detectors.get('main_queue_detector', []))
+                            sec_q = sum(traci.lanearea.getLastStepVehicleNumber(d) for d in detectors.get('secondary_queue_detector', []))
+                            queue_samples[int_id]['main'].append(main_q)
+                            queue_samples[int_id]['secondary'].append(sec_q)
+                        except traci.TraCIException:
+                            queue_samples[int_id]['main'].append(0)
+                            queue_samples[int_id]['secondary'].append(0)
 
-                            # --- FIX: Handle single or multiple secondary queue detectors ---
-                            sec_queue = 0
-                            sec_detectors = detectors.get('secondary_queue_detector', [])
-                            if not isinstance(sec_detectors, list):
-                                sec_detectors = [sec_detectors] # Treat a single string as a list
-
-                            for detector_id in sec_detectors:
-                                sec_queue += traci.lanearea.getLastStepVehicleNumber(detector_id)
-                            
-                            live_queue_lengths[int_id] = {'main': main_queue, 'secondary': sec_queue}
-                        except traci.TraCIException as e:
-                            print(f"[WARNING] Could not get queue data for intersection {int_id}: {e}")
-                            live_queue_lengths[int_id] = {'main': 0, 'secondary': 0} # Default on error
+                # --- BƯỚC 2: TỔNG HỢP DỮ LIỆU (mỗi 50 giây) ---
+                if current_step > 0 and current_step % AGGREGATION_INTERVAL_S == 0:
+                    print(f"--- Aggregating data at Sim Time: {current_step}s ---")
                     
-                    # --- Run the Perimeter Control Step ---
-                    print(f"--- Running Control Step at Simulation Time: {sumo_sim.get_step_counts()}s ---")
-                    _, qg_previous, _ = controller.run_simulation_step(
-                        n_current, n_previous, qg_previous, live_queue_lengths
-                    )
-                    n_previous = n_current
-                
-                # Print status every 10 seconds for monitoring
-                if sumo_sim.get_step_counts() % 10 == 0:
-                    # We can get a fresh vehicle count for printing, or just use the last calculated n_current
-                    # For simplicity, let's just print a status message.
-                    print(f"Step {sumo_sim.get_step_counts()}s / {total_simulation_steps}s")
+                    # Tính trung bình và cập nhật vào biến "mới nhất"
+                    if n_samples:
+                        latest_aggregated_n = sum(n_samples) / len(n_samples)
+                        print(f"New aggregated n(k) = {latest_aggregated_n:.2f} (from {len(n_samples)} samples)")
 
+                    for int_id, data in queue_samples.items():
+                        avg_main = sum(data['main']) / len(data['main']) if data['main'] else 0
+                        avg_sec = sum(data['secondary']) / len(data['secondary']) if data['secondary'] else 0
+                        latest_aggregated_queue_lengths[int_id] = {'main': avg_main, 'secondary': avg_sec}
+
+                    # Xóa các mẫu để bắt đầu chu kỳ mới
+                    n_samples.clear()
+                    for int_id in queue_samples:
+                        queue_samples[int_id]['main'].clear()
+                        queue_samples[int_id]['secondary'].clear()
+
+                # --- BƯỚC 3: CHẠY THUẬT TOÁN ĐIỀU KHIỂN (mỗi 90 giây) ---
+                if current_step > 0 and current_step % CONTROL_INTERVAL_S == 0:
+                    print(f"--- Running Control Step at Sim Time: {current_step}s ---")
+                    print(f"Using latest aggregated data. n(k) = {latest_aggregated_n:.2f}")
+                    
+                    # Chạy thuật toán với dữ liệu tổng hợp mới nhất
+                    _, qg_previous, _ = controller.run_simulation_step(
+                        latest_aggregated_n, n_previous, qg_previous, latest_aggregated_queue_lengths
+                    )
+                    
+                    # Cập nhật giá trị trước đó cho chu kỳ điều khiển tiếp theo
+                    n_previous = latest_aggregated_n
+                
+                if current_step % 10 == 0:
+                    print(f"Step {current_step}s / {total_simulation_steps}s")
 
         finally:
-            print("Hoàn tất mô phỏng. Dừng luồng điều khiển...")
-            stop_event.set() # Signal the controller thread to stop
-            controller_thread.join() # Đợi luồng kết thúc
+            print("Hoàn tất mô phỏng. Dừng các luồng...")
+            stop_event.set()
+            controller_thread.join()
             try:
                 sumo_sim.close()
                 sql_conn.close()
@@ -322,13 +256,24 @@ def run_sumo_simulation():
 
 
 if __name__ == "__main__":
-    # You can choose which simulation to run.
-    # Default is the live SUMO simulation.
-    
-    # To run the mock simulation with test data:
-    # python main.py mock
+    # Mặc định chạy mô phỏng SUMO thực tế.
+    # Để chạy mô phỏng thử nghiệm với dữ liệu giả lập, dùng lệnh:
+    # python src/main.py mock
     
     if len(sys.argv) > 1 and sys.argv[1] == 'mock':
-        run_mock_simulation()
+        # Gọi hàm chạy thử nghiệm đã được chuyển vào module algo
+        run_perimeter_control_mock_test()
+    else:
+        run_sumo_simulation()
+
+
+if __name__ == "__main__":
+    # Mặc định chạy mô phỏng SUMO thực tế.
+    # Để chạy mô phỏng thử nghiệm với dữ liệu giả lập, dùng lệnh:
+    # python src/main.py mock
+    
+    if len(sys.argv) > 1 and sys.argv[1] == 'mock':
+        # Gọi hàm chạy thử nghiệm đã được chuyển vào module algo
+        run_perimeter_control_mock_test()
     else:
         run_sumo_simulation()

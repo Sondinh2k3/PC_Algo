@@ -1,7 +1,8 @@
 {
   "metadata": {
     "description": "Configuration for detectors used for algorithm inputs and solver inputs.",
-    "version": "1.0"
+    "version": "1.1",
+    "comment": "Updated solver_input_detectors to support multi-phase structure."
   },
   "algorithm_input_detectors": {
     "description": "List of detector IDs used for calculating the primary algorithm input, such as total vehicle accumulation in the controlled area.",
@@ -18,37 +19,87 @@
       "e2_38"
     ]
   },
-
   "mfd_input_flow_detectors": {
     "description": "List of detector IDs used for calculating the flow.",
     "detector_ids": [
       "e1_15",
       "e1_34",
       "e1_03",
-      "e1_036",
-      "e1_02",
-      "e1_00",
+      "e1_49",
+      "e1_47",
+      "e1_48",
       "e1_46",
       "e1_45",
       "e1_1",
       "e1_0"
     ]
   },
-
   "solver_input_detectors": {
-    "description": "Mapping of detectors to specific intersections and phases for providing real-time data to the optimization solver, such as queue lengths.",
+    "description": "Mapping of detectors to specific intersections and phases for providing real-time data to the optimization solver, such as queue lengths. Structure supports one primary ('p') and multiple secondary ('s') phases.",
     "intersections": {
       "j7": {
-        "main_queue_detector": "e2_17",
-        "secondary_queue_detector": ["e2_15", "e2_14"]
+        "phases": {
+          "p": {
+            "queue_detectors": [
+              "e2_17"
+            ]
+          },
+          "s": [
+            {
+              "comment": "Secondary Phase 0",
+              "queue_detectors": [
+                "e2_15",
+                "e2_14"
+              ]
+            }
+          ]
+        }
       },
       "cluster4558417642_4750216441_4750239705_4750239708": {
-        "main_queue_detector": ["e2_51", "e2_50"],
-        "secondary_queue_detector": ["e2_46", "e2_43", "e2_45"]
+        "phases": {
+          "p": {
+            "queue_detectors": [
+              "e2_51",
+              "e2_50"
+            ]
+          },
+          "s": [
+            {
+              "comment": "Secondary Phase 0",
+              "queue_detectors": [
+                "e2_46",
+                "e2_43",
+                "e2_45"
+              ]
+            }
+          ]
+        }
       },
       "95023762": {
-        "main_queue_detector": ["e2_37", "e2_38"],
-        "secondary_queue_detector": ["e2_39", "e2_44"]
+        "phases": {
+          "p": {
+            "queue_detectors": [
+              "e2_37",
+              "e2_38"
+            ]
+          },
+          "s": [
+            {
+              "comment": "Secondary Phase 4",
+              "queue_detectors": [
+                "e2_39",
+                "e2_44"
+              ]
+            },
+            {
+              "comment": "Secondary Phase 6",
+              "queue_detectors": [
+                "e2_39",
+                "e2_40"
+              ]
+            }
+          ]
+        }
       }
     }
   }
