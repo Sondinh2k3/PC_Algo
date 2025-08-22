@@ -19,7 +19,7 @@ sys.path.append(project_root)
 print(project_root)
 
 from src.sumosim import SumoSim
-from src.algorithm.pso import PSO
+from src.algorithm.pso import PSO, PSO_MultiCPUs
 from src.algorithm.algo import PerimeterController, N_HAT, CONTROL_INTERVAL_S
 from src.data.intersection_config_manager import IntersectionConfigManager
 
@@ -27,8 +27,8 @@ from src.data.intersection_config_manager import IntersectionConfigManager
 if 'SUMO_HOME' not in os.environ:
     sys.exit("Please declare environment variable 'SUMO_HOME'")
 
-N_PARTICLES = 25
-MAX_ITERATIONS = 50
+N_PARTICLES = 10
+MAX_ITERATIONS = 12
 KP_MIN = 0.0
 KP_MAX = 100.0
 KI_MIN = 0.0
@@ -260,6 +260,16 @@ if __name__ == "__main__":
         c2=2.0,
         random_seed=42
     )
+
+    # pso = PSO_MultiCPUs(
+    #     objective_function=sumo_obj_func,
+    #     bounds=params_bound,
+    #     n_particles=N_PARTICLES,  # Good number for multiprocessing
+    #     max_iterations=MAX_ITERATIONS,  # Just for demo
+    #     use_multiprocessing=True,
+    #     n_processes=5,  # Fixed number for predictable behavior
+    #     random_seed=42
+    # )
 
     best_params, best_fitness = pso.optimize(verbose=True)
     print(f"\nOptimization Results:")
