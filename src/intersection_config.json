@@ -119,73 +119,73 @@
       "95023762"
     ],
     "theta_1": 1.0,
-    "theta_2": 0.5,
+    "theta_2": 1.0,
     "default_cycle_length": 90,
     "min_green_time": 15,
     "max_green_time": 75,
-    "max_change": 5,
+    "max_change": 10,
     "intersection_data": {
       "j7": {
         "cycle_length": 90,
-        "main_phases": [
-          2
-        ],
-        "secondary_phases": [
-          0
-        ],
-        "saturation_flows": {
-          "main": 0.45,
-          "secondary": 0.35
-        },
-        "turn_in_ratios": {
-          "main": 0.7,
-          "secondary": 0.5
-        },
-        "queue_lengths": {
-          "main": 15,
-          "secondary": 8
+        "phases": {
+          "p": {
+            "phase_indices": [2],
+            "saturation_flow": 0.45,
+            "turn_in_ratio": 0.7,
+            "queue_length": 15
+          },
+          "s": [
+            {
+              "phase_indices": [0],
+              "saturation_flow": 0.35,
+              "turn_in_ratio": 0.5,
+              "queue_length": 8
+            }
+          ]
         }
       },
       "cluster4558417642_4750216441_4750239705_4750239708": {
         "cycle_length": 90,
-        "main_phases": [
-          0
-        ],
-        "secondary_phases": [
-          2
-        ],
-        "saturation_flows": {
-          "main": 0.4,
-          "secondary": 0.38
-        },
-        "turn_in_ratios": {
-          "main": 0.8,
-          "secondary": 0.5
-        },
-        "queue_lengths": {
-          "main": 20,
-          "secondary": 10
+        "phases": {
+          "p": {
+            "phase_indices": [0],
+            "saturation_flow": 0.4,
+            "turn_in_ratio": 0.8,
+            "queue_length": 20
+          },
+          "s": [
+            {
+              "phase_indices": [2],
+              "saturation_flow": 0.38,
+              "turn_in_ratio": 0.5,
+              "queue_length": 10
+            }
+          ]
         }
       },
       "95023762": {
-        "cycle_length": 40,
-        "main_phases": [
-          0
-        ],
-        "secondary_phases": [
-          4
-        ],
-        "saturation_flows": {
-          "main": 0.5,
-          "secondary": 0.42
-        },
-        "turn_in_ratios": {
-          "main": 0.6,
-          "secondary": 0.5
-        },
-        "queue_lengths": {
-          "main": 12,
-          "secondary": 6
+        "cycle_length": 90,
+        "phases": {
+          "p": {
+            "phase_indices": [0],
+            "saturation_flow": 0.5,
+            "turn_in_ratio": 0.6,
+            "queue_length": 12
+          },
+          "s": [
+            {
+              "phase_indices": [4],
+              "saturation_flow": 0.42,
+              "turn_in_ratio": 0.3,
+              "queue_length": 6
+            },
+            {
+              "phase_indices": [6],
+              "saturation_flow": 0.40,
+              "turn_in_ratio": 0.2,
+              "queue_length": 5
+            }
+          ]
         }
       }
     }

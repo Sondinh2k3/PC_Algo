@@ -1,28 +1,26 @@
-# Main application dependencies
-PyYAML>=6.0
-neo4j
-mysql-connector-python
-
-# Dependencies from the MFD analysis tool (kept for compatibility)
-pandas>=1.5.0
-numpy>=1.21.0
-matplotlib>=3.5.0
-scipy>=1.9.0
-seaborn>=0.11.0
-
-# Requirements for MFD Analysis Tool
-# Core dependencies
-pandas>=1.5.0
-numpy>=1.21.0
-matplotlib>=3.5.0
-pyyaml>=6.0
-
-# Scientific computing for smoothing and curve fitting
-scipy>=1.9.0
-
-# SUMO dependencies (if not already installed)
-# traci is part of SUMO installation
-# sumolib is part of SUMO installation
-
-# Optional: for better plotting
-seaborn>=0.11.0
+absl-py==2.3.1
+contourpy==1.3.3
+cycler==0.12.1
+eclipse-sumo==1.24.0
+fonttools==4.59.1
+immutabledict==4.2.1
+kiwisolver==1.4.9
+libsumo==1.24.0
+matplotlib==3.10.5
+neo4j==5.28.2
+numpy==2.3.2
+ortools==9.14.6206
+packaging==25.0
+pandas==2.3.1
+pillow==11.3.0
+protobuf==6.31.1
+pyparsing==3.2.3
+PySCIPOpt==5.5.0
+python-dateutil==2.9.0.post0
+pytz==2025.2
+PyYAML==6.0.2
+six==1.17.0
+sumolib==1.24.0
+traci==1.24.0
+typing_extensions==4.14.1
+tzdata==2025.2

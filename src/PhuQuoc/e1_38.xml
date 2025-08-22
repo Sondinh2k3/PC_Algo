@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-08-20 08:47:04 by Eclipse SUMO GUI Version 1.23.1
+<!-- generated on 2025-08-22 06:33:44 by Eclipse SUMO GUI Version 1.23.1
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="src\PhuQuoc/phuquoc.net.xml"/>
-        <route-files value="src\PhuQuoc/phuquoc.rou.xml,src\PhuQuoc/phuquoc-demo.rou.xml"/>
-        <additional-files value="src\PhuQuoc/detector.add.xml"/>
+        <net-file value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\src\PhuQuoc/phuquoc.net.xml"/>
+        <route-files value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\src\PhuQuoc/phuquoc.rou.xml,D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\src\PhuQuoc/phuquoc-demo.rou.xml"/>
+        <additional-files value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\src\PhuQuoc/detector.add.xml"/>
     </input>
 
     <output>
-        <tripinfo-output value="src\PhuQuoc/../../output/tripinfo_baseline.xml"/>
-        <vehroute-output value="src\PhuQuoc/../../output/vehroutes_baseline.xml"/>
-        <edgedata-output value="src\PhuQuoc/../../output/edgedata_baseline.xml"/>
+        <tripinfo-output value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\output\tripinfo.xml"/>
+        <vehroute-output value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\output\vehroutes.xml"/>
+        <edgedata-output value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\src\PhuQuoc/../../output/edgedata_baseline.xml"/>
     </output>
 
     <time>
@@ -42,22 +42,8 @@
     </traci_server>
 
     <gui_only>
-        <gui-settings-file value="src\PhuQuoc/phuquoc.view.xml"/>
+        <gui-settings-file value="D:\He_thong_giao_thong_thich_ung\Algorithms_code\PC_Algorithms\src\PhuQuoc/phuquoc.view.xml"/>
         <start value="true"/>
     </gui_only>
 
 </sumoConfiguration>
--->
-
-<detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e1_file.xsd">
-    <interval begin="0.00" end="300.00" id="e1_38" nVehContrib="20" flow="240.00" occupancy="39.29" speed="7.46" harmonicMeanSpeed="2.99" length="4.59" nVehEntered="21"/>
-    <interval begin="300.00" end="600.00" id="e1_38" nVehContrib="22" flow="264.00" occupancy="40.50" speed="6.11" harmonicMeanSpeed="0.94" length="5.14" nVehEntered="21"/>
-    <interval begin="600.00" end="900.00" id="e1_38" nVehContrib="25" flow="300.00" occupancy="53.06" speed="5.76" harmonicMeanSpeed="0.80" length="4.87" nVehEntered="25"/>
-    <interval begin="900.00" end="1200.00" id="e1_38" nVehContrib="23" flow="276.00" occupancy="60.34" speed="6.32" harmonicMeanSpeed="0.92" length="5.13" nVehEntered="24"/>
-    <interval begin="1200.00" end="1500.00" id="e1_38" nVehContrib="37" flow="444.00" occupancy="62.24" speed="4.04" harmonicMeanSpeed="0.79" length="5.30" nVehEntered="36"/>
-    <interval begin="1500.00" end="1800.00" id="e1_38" nVehContrib="33" flow="396.00" occupancy="53.18" speed="4.12" harmonicMeanSpeed="1.09" length="4.75" nVehEntered="35"/>
-    <interval begin="1800.00" end="2100.00" id="e1_38" nVehContrib="19" flow="228.00" occupancy="73.69" speed="2.08" harmonicMeanSpeed="0.33" length="6.66" nVehEntered="19"/>
-    <interval begin="2100.00" end="2400.00" id="e1_38" nVehContrib="16" flow="192.00" occupancy="61.56" speed="3.34" harmonicMeanSpeed="0.80" length="5.73" nVehEntered="15"/>
-    <interval begin="2400.00" end="2700.00" id="e1_38" nVehContrib="7" flow="84.00" occupancy="21.93" speed="7.48" harmonicMeanSpeed="0.61" length="4.76" nVehEntered="9"/>
-    <interval begin="2700.00" end="3000.00" id="e1_38" nVehContrib="25" flow="300.00" occupancy="120.56" speed="2.09" harmonicMeanSpeed="0.40" length="4.09" nVehEntered="25"/>
-</detector>

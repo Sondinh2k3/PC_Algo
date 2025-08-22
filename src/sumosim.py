@@ -27,7 +27,10 @@ class SumoSim:
     #predefined config
     def start(self, output_files: dict = None):
         """Start the SUMO simulation, optionally overriding output files."""
-        sumo_cmd = [self.sumo_binary, "-c", self.config['config_file'],
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        config_file_path = os.path.join(project_root, 'src', self.config['config_file'])
+
+        sumo_cmd = [self.sumo_binary, "-c", config_file_path,
                     "--step-length", str(self.config['step_length'])]
 
         # Add output file overrides if provided
@@ -40,8 +43,12 @@ class SumoSim:
         if self.config['gui']:
             sumo_cmd.append("--start")
 
-        traci.start(sumo_cmd, port=self.config['port'])
-        logging.info("SUMO simulation started with command: %s", ' '.join(sumo_cmd))
+        try:
+            traci.start(sumo_cmd, port=self.config['port'])
+            logging.info("SUMO simulation started with command: %s", ' '.join(sumo_cmd))
+        except Exception as e:
+            print(f"Error starting SUMO: {e}")
+            sys.exit(1)
 
     def step(self):
         """Perform a simulation step."""
@@ -53,8 +60,6 @@ class SumoSim:
     
     def get_step_counts(self)-> int:
         return self.step_count
-    
-    
 
 
-    
+

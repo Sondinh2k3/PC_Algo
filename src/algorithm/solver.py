@@ -1,106 +1,120 @@
 """
 Module giải bài toán tối ưu hóa phân bổ thời gian đèn xanh.
 Sử dụng PySCIPOpt để giải bài toán MIQP (Mixed-Integer Quadratic Programming) phi tuyến.
+MODIFIED: Hỗ trợ cấu trúc pha linh hoạt (1 pha chính, nhiều pha phụ).
 """
 
 from pyscipopt import Model, quicksum
 from pyscipopt.recipes.nonlinear import set_nonlinear_objective
 from typing import Dict, Optional
 
-# Import các thành phần chung và lớp quản lý config
-# Sửa lỗi import: Bỏ dấu . và .. để dùng import tuyệt đối từ src
 from algorithm.common import SolverStatus
 from data.intersection_config_manager import IntersectionConfigManager
 
 def solve_green_time_optimization(
-    target_inflow: float,
-    config_manager: IntersectionConfigManager,
-    previous_green_times: Dict,
+    target_inflow: float, # qg: veh/h duoc tinh toan boi bo dieu khien PC
+    config_manager: IntersectionConfigManager, # cac du lieu lien quan den nut giao
+    previous_green_times: Dict, # Thong tin thoi gian xanh cua chu ky truoc
     live_queue_lengths: Optional[Dict] = None
 ) -> Optional[Dict]:
     """
-    Giải bài toán tối ưu hóa để chuyển đổi lưu lượng mục tiêu (qg) thành thời gian đèn xanh.
+    Giải bài toán tối ưu hóa để phân bổ lưu lượng mục tiêu (qg) thành thời gian đèn xanh
+    hỗ trợ nhiều pha phụ.
 
     Args:
         target_inflow: Lưu lượng vào mục tiêu qg(k) [xe/giờ].
         config_manager: Đối tượng quản lý cấu hình intersection.
         previous_green_times: Dict chứa thời gian xanh của chu kỳ trước.
-        live_queue_lengths: Dict chứa độ dài hàng đợi thực tế từ mô phỏng.
+        live_queue_lengths: Dict chứa độ dài hàng đợi thực tế từ mô phỏng (chưa dùng trong phiên bản này).
 
     Returns:
         Một dict chứa kết quả nếu tìm thấy nghiệm tối ưu, ngược lại trả về None.
     """
-    # Lấy các tham số và ID từ config manager
     global_params = config_manager.get_global_params()
     intersection_ids = config_manager.get_intersection_ids()
 
-    # Chuyển đổi từ xe/giờ sang xe/chu kỳ đèn
     cycle_length = global_params.get('default_cycle_length', 90)
     qg_prime = target_inflow * cycle_length / 3600.0
     
     print(f"🔧 Giải bài toán MIQP với mục tiêu qg = {target_inflow:.2f} [xe/giờ]")
     print(f"   (Tương đương {qg_prime:.2f} [xe / chu kỳ đèn {cycle_length}s])")
 
-    model = Model("MIQP_PerimeterControl")
+    model = Model("MIQP_PerimeterControl_MultiPhase")
 
-    # Lấy tham số từ config
     theta_1 = global_params.get('theta_1', 1.0)
     theta_2 = global_params.get('theta_2', 0.5)
     min_green = global_params.get('min_green_time', 15)
-    max_change = global_params.get('max_change', 5)
+    max_change = global_params.get('max_change', 10)
 
-    # Thêm biến quyết định G_main và G_secondary
     G_vars = {}
     for int_id in intersection_ids:
-        max_green = config_manager.get_cycle_length(int_id) - min_green
-        G_main = model.addVar(f'G_{int_id}_main', vtype='INTEGER', lb=min_green, ub=max_green)
-        G_sec = model.addVar(f'G_{int_id}_secondary', vtype='INTEGER', lb=min_green, ub=max_green)
-        G_vars[int_id] = {'main': G_main, 'secondary': G_sec}
+        G_vars[int_id] = {'p': None, 's': {}}
+        # max_green for each intersection can be different based on its cycle length
+        int_max_green = config_manager.get_cycle_length(int_id) - min_green
+        phase_info = config_manager.get_phase_info(int_id)
+
+        # Tạo biến cho pha chính (primary)
+        G_p = model.addVar(f'G_{int_id}_p', vtype='INTEGER', lb=min_green, ub=int_max_green)
+        G_vars[int_id]['p'] = G_p
+
+        # Tạo biến cho các pha phụ (secondary)
+        if phase_info and 's' in phase_info:
+            for i, _ in enumerate(phase_info['s']):
+                G_s = model.addVar(f'G_{int_id}_s_{i}', vtype='INTEGER', lb=min_green, ub=int_max_green)
+                G_vars[int_id]['s'][i] = G_s
 
     # Thêm ràng buộc
     for int_id in intersection_ids:
-        # Ràng buộc 1: Tổng thời gian xanh = chu kỳ đèn
+        phase_info = config_manager.get_phase_info(int_id)
         current_cycle = config_manager.get_cycle_length(int_id)
-        model.addCons(G_vars[int_id]['main'] + G_vars[int_id]['secondary'] == current_cycle, f"cons_cycle_{int_id}")
+
+        # Ràng buộc 1: Tổng thời gian xanh = chu kỳ đèn
+        secondary_phases_sum = quicksum(G_vars[int_id]['s'][i] for i in G_vars[int_id]['s'])
+        model.addCons(G_vars[int_id]['p'] + secondary_phases_sum == current_cycle, f"cons_cycle_{int_id}")
 
         # Ràng buộc 2: Giới hạn thay đổi so với chu kỳ trước
-        prev_main = previous_green_times[int_id]['main']
-        prev_sec = previous_green_times[int_id]['secondary']
-        model.addCons(G_vars[int_id]['main'] >= prev_main - max_change, f"cons_G_main_min_{int_id}")
-        model.addCons(G_vars[int_id]['main'] <= prev_main + max_change, f"cons_G_main_max_{int_id}")
-        model.addCons(G_vars[int_id]['secondary'] >= prev_sec - max_change, f"cons_G_sec_min_{int_id}")
-        model.addCons(G_vars[int_id]['secondary'] <= prev_sec + max_change, f"cons_G_sec_max_{int_id}")
+        prev_p = previous_green_times[int_id]['p']
+        model.addCons(G_vars[int_id]['p'] >= prev_p - max_change, f"cons_G_p_min_{int_id}")
+        model.addCons(G_vars[int_id]['p'] <= prev_p + max_change, f"cons_G_p_max_{int_id}")
+        print(f"  Intersection {int_id} - Main Phase (p): Previous={prev_p}, Bounds=[{prev_p - max_change}, {prev_p + max_change}], Var_Bounds=[{min_green}, {int_max_green}]")
+
+        if phase_info and 's' in phase_info:
+            for i, _ in enumerate(phase_info['s']):
+                prev_s = previous_green_times[int_id]['s'][i]
+                model.addCons(G_vars[int_id]['s'][i] >= prev_s - max_change, f"cons_G_s{i}_min_{int_id}")
+                model.addCons(G_vars[int_id]['s'][i] <= prev_s + max_change, f"cons_G_s{i}_max_{int_id}")
+                print(f"  Intersection {int_id} - Secondary Phase (s{i}): Previous={prev_s}, Bounds=[{prev_s - max_change}, {prev_s + max_change}], Var_Bounds=[{min_green}, {int_max_green}]")
 
     # Xây dựng hàm mục tiêu phi tuyến
-    # Thành phần 1: Tối thiểu hóa độ lệch so với lưu lượng mục tiêu
+    # Thành phần 1: Tối thiểu hóa độ lệch so với lưu lượng mục tiêu (chỉ tính trên pha chính)
     inflow_expr = quicksum(
-        G_vars[int_id]['main'] * config_manager.get_saturation_flows(int_id)['main'] * config_manager.get_turn_in_ratios(int_id)['main']
+        G_vars[int_id]['p'] * config_manager.get_phase_info(int_id)['p']['saturation_flow'] * config_manager.get_phase_info(int_id)['p']['turn_in_ratio']
         for int_id in intersection_ids
     )
     deviation = inflow_expr - qg_prime
     first_component = theta_1 * (deviation**2)
 
-    # Thành phần 2: Tối đa hóa việc sử dụng đèn xanh (dựa trên hàng đợi)
-    # Sử dụng giá trị hàng đợi thực tế nếu có, nếu không thì dùng giá trị mặc định từ config
+    # Thành phần 2: Tối đa hóa việc sử dụng đèn xanh (tối thiểu hóa lãng phí)
     utilization_expr = quicksum(
-        (1 - (G_vars[int_id]['main'] * config_manager.get_saturation_flows(int_id)['main']) / 
-            ((live_queue_lengths[int_id]['main'] if live_queue_lengths and int_id in live_queue_lengths else config_manager.get_queue_lengths(int_id)['main']) + 1))**2 +
-        (1 - (G_vars[int_id]['secondary'] * config_manager.get_saturation_flows(int_id)['secondary']) / 
-            ((live_queue_lengths[int_id]['secondary'] if live_queue_lengths and int_id in live_queue_lengths else config_manager.get_queue_lengths(int_id)['secondary']) + 1))**2
+        # Lãng phí của pha chính
+        (1 - (G_vars[int_id]['p'] * config_manager.get_phase_info(int_id)['p']['saturation_flow']) / 
+            (config_manager.get_phase_info(int_id)['p']['queue_length'] + 1))**2 +
+        # Tổng lãng phí của các pha phụ
+        quicksum(
+            (1 - (G_vars[int_id]['s'][i] * phase['saturation_flow']) / (phase['queue_length'] + 1))**2
+            for i, phase in enumerate(config_manager.get_phase_info(int_id)['s'])
+        )
         for int_id in intersection_ids
     )
     second_component = theta_2 * utilization_expr
 
-    # Thiết lập mục tiêu cho model
     set_nonlinear_objective(model, first_component + second_component, "minimize")
 
-    # Giải bài toán
     model.hideOutput()
     model.optimize()
 
-    # Xử lý kết quả
     if model.getStatus() == "optimal":
-        print(f"  Tìm được nghiệm: {model.getStatus()}")
+        print(f"  Tìm được nghiệm tối ưu: {model.getStatus()}")
         result = {
             'status': SolverStatus.OPTIMAL,
             'objective_value': model.getObjVal(),

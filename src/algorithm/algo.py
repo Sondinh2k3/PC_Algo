@@ -3,76 +3,92 @@ Lớp Điều khiển Chu vi Phản hồi (Perimeter Control)
 
 Tác giả: Sơn Đình and Đức Ngô
 
-MODIFIED: Tách biệt logic của bộ giải (solver) sang module riêng
-và thêm hàm chạy thử nghiệm (mock test).
+MODIFIED: Tách biệt logic của bộ giải (solver) sang module riêng,
+thêm hàm chạy thử nghiệm (mock test), và hỗ trợ nhiều pha phụ.
 """
 
 import time
+import os
+import sys
 from typing import Dict, Optional, Tuple
 
-# Import các thành phần từ các module khác trong src
-# Sửa lỗi import: Bỏ dấu .. để dùng import tuyệt đối từ src
+# Thêm project root vào sys.path để giải quyết vấn đề import
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from data.intersection_config_manager import IntersectionConfigManager
 from algorithm.solver import solve_green_time_optimization
 
 # === CONSTANTS ===
-KP_H = 20.0        # Proportional gain (1/hour)
-KI_H = 5.0         # Integral gain (1/hour)
-N_HAT = 90.0      # Target accumulation (vehicles)
-CONTROL_INTERVAL_S = 90  # Control interval (seconds)
+KP_H = 37.45
+KI_H = 19.01
+N_HAT = 75.0
+CONTROL_INTERVAL_S = 90
 
 class PerimeterController:
     """
     Lớp điều khiển chu vi phản hồi.
-    Thực hiện thuật toán điều khiển dựa trên bộ điều khiển PI và ủy quyền
-    việc giải bài toán tối ưu cho solver module.
     """
     
     def __init__(self, kp: float = KP_H, ki: float = KI_H, n_hat: float = N_HAT, 
-                 config_file: str = "intersection_config.json", shared_dict: Optional[Dict] = None):
-        """Khởi tạo bộ điều khiển với các tham số cần thiết"""
-        # Chuyển đổi từ đơn vị giờ sang giây
-        control_interval_h = CONTROL_INTERVAL_S / 3600.0
+                 config_file: str = "src/intersection_config.json", shared_dict: Optional[Dict] = None,
+                 control_interval_s: int = CONTROL_INTERVAL_S):
+        control_interval_h = control_interval_s / 3600.0
         self.kp = kp * control_interval_h
         self.ki = ki * control_interval_h
         self.n_hat = n_hat
         
         self.shared_dict = shared_dict
         self.is_active = False
-        if self.shared_dict is not None:
-            self.shared_dict['is_active'] = self.is_active
-            self.shared_dict['green_times'] = {}
 
-        self.activation_threshold = 0.85 * self.n_hat  
-        self.deactivation_threshold = 0.70 * self.n_hat 
+        self.activation_threshold = 0.85 * self.n_hat
+        self.deactivation_threshold = 0.70 * self.n_hat
 
-        # Load cấu hình intersection từ JSON
         self.config_manager = IntersectionConfigManager(config_file)
         self.intersection_ids = self.config_manager.get_intersection_ids()
         
-        # Lưu trữ giá trị trước đó cho mỗi intersection
         self.previous_green_times = {}
-        for intersection_id in self.intersection_ids:
-            intersection_data = self.config_manager.get_intersection_data(intersection_id)
-            if intersection_data:
-                cycle_length = intersection_data.get('cycle_length', 90)
-                # Giả sử chia đều cho pha chính và phụ ban đầu
-                self.previous_green_times[intersection_id] = {
-                    'main': cycle_length // 2,
-                    'secondary': cycle_length // 2
-                }
+        for int_id in self.intersection_ids:
+            tl_id = self.config_manager.get_traffic_light_id(int_id)
+            if not tl_id:
+                print(f"Warning: No traffic_light_id found for intersection {int_id}. Skipping initialization for this intersection.")
+                continue
+
+            traffic_light_phases = self.config_manager.config_data.get('traffic_lights', {}).get(tl_id, {}).get('phases', [])
+            phase_info = self.config_manager.get_phase_info(int_id)
+
+            if not traffic_light_phases or not phase_info: 
+                print(f"Warning: No phase info found for traffic light {tl_id} or intersection {int_id}. Skipping initialization for this intersection.")
+                continue
+
+            main_phase_duration = 0
+            if 'p' in phase_info and 'phase_indices' in phase_info['p']:
+                main_phase_index = phase_info['p']['phase_indices'][0]
+                if 0 <= main_phase_index < len(traffic_light_phases):
+                    main_phase_duration = int(traffic_light_phases[main_phase_index].get('duration', 0))
+
+            secondary_phase_durations = []
+            if 's' in phase_info:
+                for s_phase_config in phase_info['s']:
+                    if 'phase_indices' in s_phase_config:
+                        s_phase_index = s_phase_config['phase_indices'][0]
+                        if 0 <= s_phase_index < len(traffic_light_phases):
+                            secondary_phase_durations.append(int(traffic_light_phases[s_phase_index].get('duration', 0)))
+
+            self.previous_green_times[int_id] = {
+                'p': main_phase_duration,
+                's': secondary_phase_durations
+            }
         
         if self.shared_dict is not None:
+            self.shared_dict['is_active'] = self.is_active
             self.shared_dict['green_times'] = self.previous_green_times
 
-        print("🚦 Bộ điều khiển chu vi đã được khởi tạo.")
+        print("🚦Bộ điều khiển chu vi đã được khởi tạo (hỗ trợ nhiều pha phụ).")
         print(f"Ngưỡng kích hoạt: n(k) > {self.activation_threshold:.0f} xe")
         print(f"Ngưỡng hủy: n(k) < {self.deactivation_threshold:.0f} xe")
-        print(f"Tham số: KP={kp:.1f} h⁻¹, KI={ki:.1f} h⁻¹")
         print(f"Số intersection: {len(self.intersection_ids)}")
 
     def check_activation_status(self, n_k: float):
-        """Kiểm tra xem có nên kích hoạt hay hủy bộ điều khiển"""
         if n_k > self.activation_threshold:
             if not self.is_active:
                 print(f"KÍCH HOẠT ĐIỀU KHIỂN CHU VI (n(k)={n_k:.0f} > {self.activation_threshold:.0f})")
@@ -86,25 +102,15 @@ class PerimeterController:
             self.shared_dict['is_active'] = self.is_active
 
     def calculate_target_inflow(self, n_k: float, n_k_minus_1: float, qg_k_minus_1: float) -> float:
-        """
-        BƯỚC 2: Tính toán lưu lượng vào mục tiêu (qg) bằng công thức PI.
-        """
         error = self.n_hat - n_k
         change_in_n = n_k - n_k_minus_1
-
         qg_k = qg_k_minus_1 - (self.kp / (CONTROL_INTERVAL_S / 3600.0)) * change_in_n + (self.ki / (CONTROL_INTERVAL_S / 3600.0)) * error
-        
         print(f" Sai số: e(k) = {self.n_hat:.0f} - {n_k:.0f} = {error:.1f} xe")
         print(f" Thay đổi: Δn(k) = {n_k:.0f} - {n_k_minus_1:.0f} = {change_in_n:.1f} xe")
         print(f" PI Output: qg(k) = {qg_k:.2f} xe/giờ")
-        
-        return max(0, qg_k)  # Đảm bảo không âm
+        return max(0, qg_k)
 
     def distribute_inflow_to_green_times(self, target_inflow: float, live_queue_lengths: Optional[Dict] = None):
-        """
-        BƯỚC 3: Gọi bộ giải để phân bổ lưu lượng mục tiêu thành thời gian đèn xanh.
-        """
-        # Ủy quyền việc giải bài toán cho solver module
         result = solve_green_time_optimization(
             target_inflow=target_inflow,
             config_manager=self.config_manager,
@@ -117,40 +123,34 @@ class PerimeterController:
             total_inflow = 0
             new_green_times = {}
 
-            for intersection_id in self.intersection_ids:
-                G_main = result['variables'][f'G_{intersection_id}_main']
-                G_secondary = result['variables'][f'G_{intersection_id}_secondary']
-                
-                new_green_times[intersection_id] = {
-                    'main': int(G_main),
-                    'secondary': int(G_secondary)
-                }
+            for int_id in self.intersection_ids:
+                phase_info = self.config_manager.get_phase_info(int_id)
+                if not phase_info: continue
 
-                # Tính lưu lượng vào dự kiến để hiển thị
-                saturation_flows = self.config_manager.get_saturation_flows(intersection_id)
-                turn_in_ratios = self.config_manager.get_turn_in_ratios(intersection_id)
-                inflow_main = (G_main * saturation_flows['main'] * turn_in_ratios['main'])
-                total_inflow += inflow_main
-                
-                print(f"   {intersection_id}: G_main={G_main:.0f}s, G_secondary={G_secondary:.0f}s, inflow={inflow_main:.1f} xe/chu kỳ")
+                G_p = result['variables'][f'G_{int_id}_p']
+                new_green_times[int_id] = {'p': int(G_p), 's': []}
+
+                inflow_p = (G_p * phase_info['p']['saturation_flow'] * phase_info['p']['turn_in_ratio'])
+                total_inflow += inflow_p
+                print(f"   {int_id}: G_p={G_p:.0f}s, inflow={inflow_p:.1f} xe/chu kỳ")
+
+                if 's' in phase_info:
+                    for i, _ in enumerate(phase_info['s']):
+                        G_s = result['variables'][f'G_{int_id}_s_{i}']
+                        new_green_times[int_id]['s'].append(int(G_s))
+                        print(f"     └─ G_s{i}={G_s:.0f}s")
             
-            # Cập nhật giá trị cho chu kỳ tiếp theo
             self.previous_green_times = new_green_times
             if self.shared_dict is not None:
                 self.shared_dict['green_times'] = new_green_times
 
-            print(f"  Tổng lưu lượng dự kiến: {total_inflow:.2f} xe/chu kỳ")
+            print(f"  Tổng lưu lượng dự kiến (từ các pha chính): {total_inflow:.2f} xe/chu kỳ")
         else:
             print("  Không tìm được nghiệm tối ưu, giữ nguyên thời gian đèn xanh.")
 
     def run_simulation_step(self, n_current: float, n_previous: float, qg_previous: float, live_queue_lengths: Optional[Dict] = None) -> Tuple[float, float, bool]:
-        """
-        Chạy một bước điều khiển chu vi (1 vòng lặp).
-        Trả về (n_current, qg_new, controller_active).
-        """
         print(f"\n{'='*60}")
         print(f"🔍 BƯỚC 1: Đo lường - Trạng thái hiện tại: n(k) = {n_current:.0f} xe")
-
         self.check_activation_status(n_current)
 
         if not self.is_active:
@@ -159,11 +159,7 @@ class PerimeterController:
             return n_current, qg_previous, False
 
         print(f" BƯỚC 2: Tính toán lưu lượng mục tiêu qg")
-        qg_new = self.calculate_target_inflow(
-            n_k=n_current,
-            n_k_minus_1=n_previous,
-            qg_k_minus_1=qg_previous
-        )
+        qg_new = self.calculate_target_inflow(n_k=n_current, n_k_minus_1=n_previous, qg_k_minus_1=qg_previous)
 
         print(f" BƯỚC 3: Phân bổ thành thời gian đèn xanh")
         self.distribute_inflow_to_green_times(qg_new, live_queue_lengths)
@@ -172,37 +168,30 @@ class PerimeterController:
         return n_current, qg_new, True
 
 def run_perimeter_control_mock_test():
-    """
-    Chạy mô phỏng thử nghiệm cho bộ điều khiển chu vi với dữ liệu giả lập.
-    Hàm này dùng để kiểm tra nhanh logic của thuật toán mà không cần SUMO.
-    """
     print("🚦 BẮT ĐẦU MÔ PHỎNG THỬ NGHIỆM (MOCK TEST)")
     print("="*70)
     
-    # Khởi tạo bộ điều khiển
     try:
-        # Giả định file cấu hình nằm trong thư mục src
+        # Chạy từ thư mục gốc của dự án, nên đường dẫn tới config cần là "src/...."
         controller = PerimeterController(config_file="src/intersection_config.json")
-    except FileNotFoundError:
-        print("\n[LỖI] Không tìm thấy file 'src/intersection_config.json'.")
+    except Exception as e:
+        print(f"\n[LỖI] Không thể khởi tạo bộ điều khiển: {e}")
+        print("Vui lòng kiểm tra file 'src/intersection_config.json' và đảm bảo bạn đang chạy từ thư mục gốc của dự án.")
         return
     
-    # Dữ liệu mô phỏng: tình huống tắc nghẽn dần tăng rồi giảm
     simulation_data = [
-        {'step': 1, 'n_k': 100, 'description': 'Giao thông bình thường'},
-        {'step': 2, 'n_k': 120, 'description': 'Lưu lượng tăng nhẹ'},
-        {'step': 3, 'n_k': 140, 'description': 'Gần ngưỡng kích hoạt'},
-        {'step': 4, 'n_k': 160, 'description': 'Vượt ngưỡng - Kích hoạt điều khiển'},
-        {'step': 5, 'n_k': 170, 'description': 'Tình trạng tắc nghẽn'},
-        {'step': 6, 'n_k': 165, 'description': 'Bắt đầu cải thiện'},
-        {'step': 7, 'n_k': 140, 'description': 'Tiếp tục giảm'},
-        {'step': 8, 'n_k': 110, 'description': 'Dưới ngưỡng hủy - Tắt điều khiển'},
-        {'step': 9, 'n_k': 95, 'description': 'Trở lại bình thường'},
+        {'step': 1, 'n_k': 80, 'description': 'Giao thông bình thường'},
+        {'step': 2, 'n_k': 90, 'description': 'Lưu lượng tăng, gần ngưỡng'},
+        {'step': 3, 'n_k': 100, 'description': 'Vượt ngưỡng - Kích hoạt'},
+        {'step': 4, 'n_k': 110, 'description': 'Tắc nghẽn'},
+        {'step': 5, 'n_k': 105, 'description': 'Bắt đầu cải thiện'},
+        {'step': 6, 'n_k': 95, 'description': 'Tiếp tục giảm'},
+        {'step': 7, 'n_k': 80, 'description': 'Dưới ngưỡng - Hủy kích hoạt'},
+        {'step': 8, 'n_k': 75, 'description': 'Trở lại bình thường'},
     ]
     
-    # Khởi tạo trạng thái
-    n_previous = 100.0
-    qg_previous = 200.0  # xe/giờ
+    n_previous = 80.0
+    qg_previous = 250.0
     
     print(f"\n THÔNG TIN MÔ PHỎNG:")
     print(f"   • Ngưỡng mục tiêu n̂: {N_HAT} xe")
@@ -210,7 +199,6 @@ def run_perimeter_control_mock_test():
     print(f"   • Số bước mô phỏng: {len(simulation_data)} bước")
     print("\n" + "="*70)
     
-    # Chạy mô phỏng
     for data in simulation_data:
         step = data['step']
         n_current = data['n_k']
@@ -218,15 +206,17 @@ def run_perimeter_control_mock_test():
         
         print(f"\n CHU KỲ {step}: {description}")
         
-        n_result, qg_result, active = controller.run_simulation_step(
+        _, qg_result, _ = controller.run_simulation_step(
             n_current, n_previous, qg_previous
         )
         
-        # Cập nhật cho chu kỳ tiếp theo
         n_previous = n_current
         qg_previous = qg_result
         
-        time.sleep(0.5) # Thêm delay nhỏ để quan sát
+        time.sleep(0.5)
     
     print(" KẾT THÚC MÔ PHỎNG THỬ NGHIỆM")
     print("="*70)
+
+if __name__ == '__main__':
+    run_perimeter_control_mock_test()

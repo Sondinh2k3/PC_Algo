@@ -1,0 +1,182 @@
+{
+  "metadata": {
+    "description": "Danh sách các cảm biến dùng để thu thập dữ liệu đánh giá mô phỏng",
+    "created_at": "2025-08-20"
+  },
+  "output": {
+    "baseline": "output/detector_output_baseline.xml",
+    "algorithm": "output/detector_output_algo.xml"
+  },
+  "detectors": [
+    {
+      "id": "e1_15",
+      "type": "e1",
+      "lane": "155315669#0_0",
+      "pos": 711.89,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_1",
+      "type": "e1",
+      "lane": "482169086#0_0",
+      "pos": 1308.56,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_0",
+      "type": "e1",
+      "lane": "482169086#0_1",
+      "pos": 1309.43,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_34",
+      "type": "e1",
+      "lane": "-155775200#1_0",
+      "pos": 713.82,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_47",
+      "type": "e1",
+      "lane": "-482169086#8_1",
+      "pos": 1317.41,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_48",
+      "type": "e1",
+      "lane": "-482169086#8_0",
+      "pos": 1318.17,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_03",
+      "type": "e1",
+      "lane": "1149580107#4_0",
+      "pos": 70.89,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_49",
+      "type": "e1",
+      "lane": "1149580107#4_1",
+      "pos": 71.70,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_46",
+      "type": "e1",
+      "lane": "1149579537#6_1",
+      "pos": 142.83,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e1_45",
+      "type": "e1",
+      "lane": "1149579537#6_0",
+      "pos": 143.41,
+      "frequency": 10,
+      "description": "Đo tham số trong vùng"
+    },
+    {
+      "id": "e2_17",
+      "type": "e2",
+      "lane": "155315669#0_0",
+      "pos": 630.90,
+      "length": 80.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 1"
+    },
+    {
+      "id": "e2_38",
+      "type": "e2",
+      "lane": "482169086#0_1",
+      "pos": 1228.48,
+      "length": 80.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 2"
+    },
+    {
+      "id": "e2_35",
+      "type": "e2",
+      "lane": "-155775200#1_0",
+      "pos": 632.25,
+      "length": 80.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 2"
+    },
+    {
+      "id": "e2_2",
+      "type": "e2",
+      "lane": "-482169086#8_1",
+      "pos": 1235.38,
+      "length": 80.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 2"
+    },
+    {
+      "id": "e2_0",
+      "type": "e2",
+      "lane": "-482169086#8_0",
+      "pos": 1236.48,
+      "length": 80.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 2"
+    },
+    {
+      "id": "e2_3",
+      "type": "e2",
+      "lane": "1149580107#4_0",
+      "pos": 0.31,
+      "length": 70.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 2"
+    },
+    {
+      "id": "e2_36",
+      "type": "e2",
+      "lane": "1149580107#4_1",
+      "pos": 0.84,
+      "length": 70.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 2"
+    },
+    {
+      "id": "e2_51",
+      "type": "e2",
+      "lane": "1149579537#6_1",
+      "pos": 61.77,
+      "length": 80.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 2"
+    },
+    {
+      "id": "e2_50",
+      "type": "e2",
+      "lane": "1149579537#6_0",
+      "pos": 62.36,
+      "length": 80.00,
+      "frequency": 10,
+      "jam_threshold": 10,
+      "description": "Đo hàng đợi tại nút giao 2"
+    }
+  ]
+}
