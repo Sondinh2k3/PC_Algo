@@ -1,168 +1,148 @@
-# Hệ thống Điều khiển Giao thông Thích ứng dựa trên Chu vi
+# Hệ thống Điều khiển Giao thông Thích ứng dựa trên Chu vi (Perimeter Control)
 
-Dự án này triển khai một hệ thống điều khiển đèn giao thông thích ứng sử dụng thuật toán Perimeter Control. Hệ thống sử dụng SUMO (Simulation of Urban MObility) để mô phỏng và bộ điều khiển được viết bằng Python để tối ưu hóa luồng giao thông trong một khu vực được xác định.
+## 1. Tổng quan
 
-## Cấu trúc thư mục
+Dự án này triển khai một hệ thống điều khiển đèn giao thông thích ứng trong khu vực đô thị, sử dụng thuật toán **Perimeter Control**. Mục tiêu chính là tối ưu hóa luồng giao thông, giảm thiểu tắc nghẽn và thời gian di chuyển bằng cách điều chỉnh thời gian xanh của các đèn tín hiệu tại biên của một khu vực được bảo vệ.
+
+Hệ thống sử dụng **SUMO (Simulation of Urban MObility)** để mô phỏng môi trường giao thông thực tế và một bộ điều khiển trung tâm được viết bằng **Python** để thực thi thuật toán.
+
+### Công nghệ sử dụng
+- **Mô phỏng:** SUMO
+- **Ngôn ngữ chính:** Python
+- **Thư viện Python:** Traci (SUMO API), Pandas, Matplotlib, YAML
+- **Database (Tùy chọn):** Neo4j, SQL (thông qua các collector)
+- **Containerization:** Docker (qua `docker-compose.yml`)
+
+## 2. Tính năng chính
+
+- **Thuật toán Perimeter Control:** Tự động điều chỉnh chu kỳ đèn tín hiệu dựa trên số lượng xe bên trong khu vực (accumulation) và hàng đợi (queue) tại các lối vào.
+- **Tích hợp SUMO:** Kết nối trực tiếp với SUMO thông qua Traci để lấy dữ liệu thời gian thực và gửi lệnh điều khiển.
+- **Cấu hình linh hoạt:** Dễ dàng tùy chỉnh các tham số mô phỏng, cấu hình mạng lưới, và thuật toán thông qua các file YAML và JSON.
+- **Phân tích và Trực quan hóa:** Cung cấp các công cụ để vẽ biểu đồ MFD (Macroscopic Fundamental Diagram), so sánh kết quả và phân tích hiệu quả của thuật toán.
+- **Thu thập dữ liệu:** Có khả năng lưu trữ dữ liệu mô phỏng vào database để phân tích sâu hơn.
+
+## 3. Cấu trúc thư mục
 
 ```
 PC_Algorithms/
-├── src/
-│   ├── algorithm/
-│   │   └── algo.py             # Logic chính của thuật toán Perimeter Control
-│   ├── config/
-│   │   ├── application.yml     # Cấu hình kết nối database (nếu có)
-│   │   ├── detector_config.json # Cấu hình các cảm biến (detector)
-│   │   └── simulation.yml      # Cấu hình cho mô phỏng SUMO
-│   ├── data/
-│   │   └── ...                 # Các script quản lý dữ liệu
-│   ├── PhuQuoc/                # Thư mục chứa các file mô phỏng SUMO
-│   ├── intersection_config.json # File cấu hình chính cho các nút giao
-│   └── main.py                 # File thực thi chính của chương trình
-├── tools/
-│   └── ...                     # Các công cụ hỗ trợ
-└── README.md                   # File hướng dẫn này
+├── docker-compose.yml            # Cấu hình Docker cho các dịch vụ phụ trợ (ví dụ: database)
+├── requirements.txt              # Danh sách các thư viện Python cần thiết
+├── routes.rou.xml                # File luồng giao thông ví dụ
+├── output/                       # Thư mục chứa kết quả đầu ra (log, biểu đồ, dữ liệu)
+├── scripts/                      # Chứa các script tự động hóa (nếu có)
+├── src/                          # Toàn bộ mã nguồn của dự án
+│   ├── algorithm/                # Lõi của thuật toán điều khiển
+│   │   ├── algo.py               # Logic chính của thuật toán Perimeter Control (PI controller)
+│   │   ├── solver.py             # Bộ giải tối ưu hóa thời gian xanh cho các nút giao
+│   │   └── common.py             # Các hàm và lớp dùng chung cho thuật toán
+│   ├── config/                   # Các file cấu hình cho hệ thống
+│   │   ├── application.yml       # Cấu hình chung của ứng dụng (ví dụ: kết nối DB)
+│   │   ├── simulation.yml        # Cấu hình kịch bản mô phỏng SUMO
+│   │   ├── detector_config.json  # Định nghĩa các cảm biến (detectors) trong SUMO
+│   │   └── intersection_config.json # Cấu hình chi tiết cho từng nút giao
+│   ├── data/                     # Các module liên quan đến xử lý và quản lý dữ liệu
+│   │   ├── collector/            # Các lớp thu thập dữ liệu (ví dụ: SQLCollector)
+│   │   ├── sql/                  # Các file script SQL
+│   │   └── neo4j.cypher          # Các truy vấn cho cơ sở dữ liệu đồ thị Neo4j
+│   ├── PhuQuoc/                  # Thư mục ví dụ chứa một kịch bản mô phỏng SUMO hoàn chỉnh
+│   ├── main.py                   # Điểm khởi chạy chính của chương trình
+│   └── sumosim.py                # Lớp quản lý và tương tác với mô phỏng SUMO
+└── tools/                        # Các công cụ hỗ trợ phát triển và phân tích
+    ├── generate_intersection_config.py # Script tạo file intersection_config.json từ file .net.xml
+    ├── mfd_graph.py              # Script vẽ biểu đồ MFD từ dữ liệu đầu ra
+    └── visual_comparator.py      # Script so sánh trực quan các kịch bản khác nhau
 ```
 
-## Hướng dẫn áp dụng cho một khu vực/nút giao mới
+## 4. Hướng dẫn Cài đặt và Chuẩn bị
 
-Để áp dụng thuật toán cho một mạng lưới giao thông khác, bạn cần thực hiện một chuỗi các bước cấu hình, từ mô hình SUMO đến các file JSON của thuật toán.
+### a. Yêu cầu
+- **Python 3.8+**
+- **SUMO:** Cài đặt SUMO và đảm bảo biến môi trường `SUMO_HOME` đã được thiết lập.
+- **Docker (Tùy chọn):** Nếu bạn muốn sử dụng các dịch vụ như database.
 
-### Bước 1: Chuẩn bị các file mô phỏng SUMO
+### b. Các bước cài đặt
+1.  **Clone repository:**
+    ```bash
+    git clone <your-repository-url>
+    cd PC_Algorithms
+    ```
+2.  **Cài đặt thư viện Python:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  **Cấu hình SUMO:**
+    - Tải và cài đặt SUMO từ [trang chủ Eclipse SUMO](https://www.eclipse.org/sumo/).
+    - Thêm đường dẫn đến thư mục `tools` của SUMO vào biến môi trường `PATH` của hệ thống.
+    - Thiết lập biến môi trường `SUMO_HOME` trỏ đến thư mục cài đặt gốc của SUMO.
 
-Đây là bước nền tảng. Bạn cần có một mô hình giao thông hoàn chỉnh trong SUMO cho khu vực bạn muốn điều khiển.
+## 5. Hướng dẫn Cấu hình
 
-1.  **File Mạng lưới (`.net.xml`):** Tạo hoặc chỉnh sửa file mạng lưới đường, bao gồm các nút (junctions), các tuyến (edges), và đặc biệt là các đèn giao thông (`traffic_light`).
-2.  **File Cảm biến (`.add.xml`):** Định nghĩa các cảm biến (detectors) tại các vị trí chiến lược trong mạng lưới. Các cảm biến này là nguồn dữ liệu đầu vào cho thuật toán. Bạn sẽ cần hai loại cảm biến chính:
-    *   **Cảm biến đo lường tích lũy (Accumulation):** Đặt tại các làn đường bên trong khu vực điều khiển để đo tổng số xe (`e2 detector`).
-    *   **Cảm biến đo hàng đợi (Queue):** Đặt ở các làn đường dẫn vào các nút giao chính để đo chiều dài hàng đợi.
-3.  **File Luồng giao thông (`.rou.xml`):** Định nghĩa luồng di chuyển của các phương tiện.
-4.  **File Cấu hình SUMO (`.sumocfg`):** Kết hợp tất cả các file trên (`.net.xml`, `.rou.xml`, `.add.xml`) thành một kịch bản mô phỏng hoàn chỉnh.
+Để áp dụng thuật toán cho một mạng lưới giao thông mới, bạn cần cấu hình các file sau trong `src/config/`:
 
-### Bước 2: Cập nhật Cấu hình Mô phỏng
-
-Mở file `src/config/simulation.yml` và trỏ đường dẫn đến file `.sumocfg` mới của bạn.
-
-**Ví dụ:**
+### a. `simulation.yml`
+Trỏ đến các file mô phỏng SUMO của bạn.
 ```yaml
 type: "sumo"
 config:
-  # Thay đổi đường dẫn này tới file cấu hình SUMO của bạn
-  config_file: "DuongMoi/khuvucmoi.sumocfg"
-  net_file: "DuongMoi/khuvucmoi.net.xml"
-  route_file: "DuongMoi/khuvucmoi.rou.xml"
-  # ... các thông số khác
-  gui: true
+  config_file: "PhuQuoc/phuquoc.sumocfg" # Đường dẫn tới file .sumocfg
+  net_file: "PhuQuoc/phuquoc.net.xml"
+  route_file: "PhuQuoc/phuquoc.rou.xml"
+  gui: true # true để hiển thị giao diện đồ họa SUMO, false để chạy nền
 ```
 
-### Bước 3: Cấu hình Cảm biến (Detectors)
+### b. `detector_config.json`
+Định nghĩa ID của các cảm biến (detectors) mà thuật toán sẽ sử dụng để thu thập dữ liệu từ SUMO.
+- **`algorithm_input_detectors`**: Các cảm biến `e2` dùng để đo tổng số xe (accumulation) trong khu vực.
+- **`solver_input_detectors`**: Các cảm biến `e1` (lane area detectors) dùng để đo chiều dài hàng đợi tại các nút giao.
 
-Đây là bước quan trọng để kết nối dữ liệu từ SUMO với thuật toán. Mở file `src/config/detector_config.json`.
+### c. `intersection_config.json`
+File cấu hình quan trọng nhất, định nghĩa các tham số cho từng nút giao và cho bộ giải tối ưu.
+- **`intersections`**: Danh sách các nút giao, ID của chúng và ID đèn tín hiệu tương ứng trong SUMO.
+- **`optimization_parameters`**:
+    - `intersection_ids`: Các nút giao sẽ được tối ưu.
+    - `intersection_data`: Các thông số kỹ thuật cho từng nút giao như `cycle_length`, `main_phases`, `saturation_flows`, v.v.
 
-1.  **`algorithm_input_detectors`**: Trong phần `detector_ids`, liệt kê ID của tất cả các cảm biến (`e2 detector`) dùng để đo tổng số xe trong khu vực điều khiển.
-    ```json
-    "algorithm_input_detectors": {
-      "description": "Các cảm biến dùng để tính toán tổng số xe trong khu vực.",
-      "detector_ids": [
-        "cam_bien_duong_A",
-        "cam_bien_duong_B",
-        "..."
-      ]
-    }
-    ```
-2.  **`solver_input_detectors`**: Trong phần `intersections`, định nghĩa các cảm biến đo hàng đợi cho từng nút giao sẽ được tối ưu.
-    *   Mỗi key là một `junction_id` (bạn sẽ định nghĩa ở bước 4).
-    *   `main_queue_detector`: ID của cảm biến đo hàng đợi cho luồng chính.
-    *   `secondary_queue_detector`: Danh sách ID các cảm biến đo hàng đợi cho luồng phụ.
-
-    ```json
-    "solver_input_detectors": {
-      "intersections": {
-        "nut_giao_A": {
-          "main_queue_detector": "cam_bien_hang_doi_A_chinh",
-          "secondary_queue_detector": ["cam_bien_hang_doi_A_phu_1", "cam_bien_hang_doi_A_phu_2"]
-        },
-        "nut_giao_B": {
-          "main_queue_detector": "cam_bien_hang_doi_B_chinh",
-          "secondary_queue_detector": ["cam_bien_hang_doi_B_phu"]
-        }
-      }
-    }
-    ```
-
-### Bước 4: Cấu hình các Nút giao và Thuật toán
-
-Đây là file cấu hình trung tâm, `src/intersection_config.json`.
-
-1.  **`intersections`**: Liệt kê các nút giao của bạn. `id` ở đây phải khớp với `junction_id` bạn đã dùng trong `detector_config.json`. `traffic_light_id` là ID của đèn giao thông tương ứng trong file `.net.xml` của SUMO.
-    ```json
-    "intersections": {
-      "nut_giao_A": {
-        "id": "nut_giao_A",
-        "traffic_light_id": "TL1",
-        "type": "traffic_light",
-        "x": 0.0, "y": 0.0
-      },
-      "nut_giao_B": {
-        "id": "nut_giao_B",
-        "traffic_light_id": "TL2",
-        "type": "traffic_light",
-        "x": 0.0, "y": 0.0
-      }
-    }
-    ```
-
-2.  **`optimization_parameters`**:
-    *   **`intersection_ids`**: Liệt kê lại tất cả các `id` của nút giao sẽ tham gia vào quá trình tối ưu.
-    *   **`intersection_data`**: Cung cấp các tham số chi tiết cho từng nút giao.
-        *   `cycle_length`: Tổng thời gian một chu kỳ đèn (giây).
-        *   `main_phases`: Index (thứ tự) của các pha đèn thuộc luồng chính.
-        *   `secondary_phases`: Index của các pha đèn thuộc luồng phụ.
-        *   `saturation_flows`: Lưu lượng bão hòa (xe/giây) cho luồng chính và phụ.
-        *   `turn_in_ratios`: Tỷ lệ các dòng xe rẽ vào khu vực từ các luồng.
-        *   `queue_lengths`: Chiều dài hàng đợi mặc định/khởi tạo.
-
-    ```json
-    "intersection_data": {
-      "nut_giao_A": {
-        "cycle_length": 90,
-        "main_phases": [0],
-        "secondary_phases": [2],
-        "saturation_flows": {"main": 0.5, "secondary": 0.4},
-        "turn_in_ratios": {"main": 0.8, "secondary": 0.5},
-        "queue_lengths": {"main": 15, "secondary": 10}
-      },
-      "..."
-    }
-    ```
-
-### Bước 5: Điều chỉnh Tham số Thuật toán
-
-Các tham số cốt lõi của bộ điều khiển PI và mục tiêu của hệ thống được định nghĩa ở đầu file `src/algorithm/algo.py`.
-
+### d. `src/algorithm/algo.py`
+Tinh chỉnh các hằng số của bộ điều khiển PI và mật độ xe mục tiêu.
 ```python
-# src/algorithm/algo.py
-
-# === CONSTANTS ===
-KP_H = 20.0        # Hệ số khuếch đại tỉ lệ (Proportional gain)
-KI_H = 5.0         # Hệ số khuếch đại tích phân (Integral gain)
-N_HAT = 150.0      # Mật độ xe mục tiêu trong khu vực (xe)
-CONTROL_INTERVAL_S = 90  # Khoảng thời gian giữa 2 lần điều khiển (giây)
+KP_H = 20.0        # Hệ số tỉ lệ (Proportional gain)
+KI_H = 5.0         # Hệ số tích phân (Integral gain)
+N_HAT = 150.0      # Mật độ xe mục tiêu (xe)
+CONTROL_INTERVAL_S = 90 # Tần suất điều khiển (giây)
 ```
 
-Bạn có thể cần tinh chỉnh các giá trị `KP_H`, `KI_H`, và đặc biệt là `N_HAT` (số lượng xe mục tiêu) để phù hợp với đặc điểm của khu vực mới.
+## 6. Cách sử dụng
 
-### Bước 6: Chạy Chương trình
-
-Sau khi đã hoàn tất các bước cấu hình, bạn có thể chạy mô phỏng từ thư mục `src`:
-
+### a. Chạy mô phỏng
+Để bắt đầu, chạy file `main.py` từ thư mục `src`.
 ```bash
+cd src
 python main.py
 ```
+Giao diện đồ họa của SUMO sẽ khởi chạy và bộ điều khiển sẽ bắt đầu hoạt động.
 
-Nếu bạn muốn chạy thử nghiệm với dữ liệu giả lập (không cần SUMO) để kiểm tra logic, sử dụng lệnh:
-
+### b. Chạy với dữ liệu giả lập (Mock Mode)
+Để kiểm tra logic thuật toán mà không cần chạy SUMO, sử dụng tham số `mock`.
 ```bash
+cd src
 python main.py mock
 ```
 
-Bằng cách tuân theo các bước trên, bạn có thể cấu hình và áp dụng hệ thống điều khiển này cho bất kỳ mạng lưới giao thông nào được mô hình hóa trong SUMO.
+### c. Sử dụng các công cụ
+Các script trong thư mục `tools/` giúp tự động hóa và phân tích:
+- **Tạo config nút giao:**
+  ```bash
+  python tools/generate_intersection_config.py --net-file src/PhuQuoc/phuquoc.net.xml --output src/intersection_config.json
+  ```
+- **Vẽ biểu đồ MFD:**
+  ```bash
+  python tools/mfd_graph.py --file output/edgedata.xml --output output/mfd_graph.png
+  ```
+
+## 7. Phân tích Kết quả
+
+Kết quả mô phỏng và phân tích được lưu trong thư mục `output/`, bao gồm:
+- `edgedata.xml`: Dữ liệu chi tiết từ các cảm biến.
+- `tripinfo.xml`: Thông tin về hành trình của các xe.
+- `mfd_graph.png`: Biểu đồ MFD thể hiện mối quan hệ giữa mật độ và lưu lượng.
+- `*.csv`: Các file dữ liệu đã được xử lý.
