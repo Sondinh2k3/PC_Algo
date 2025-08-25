@@ -7,31 +7,13 @@
   "algorithm_input_detectors": {
     "description": "List of detector IDs used for calculating the primary algorithm input, such as total vehicle accumulation in the controlled area.",
     "detector_ids": [
-      "e2_17",
-      "e2_35",
-      "e2_2",
-      "e2_0",
-      "e2_3",
-      "e2_36",
-      "e2_51",
-      "e2_50",
-      "e2_37",
-      "e2_38"
+      "e2_63", "e2_55", "e2_54", "e2_62", "e2_60", "e2_59", "e2_39", "e2_40", "e2_41", "e2_42", "e2_44"
     ]
   },
   "mfd_input_flow_detectors": {
     "description": "List of detector IDs used for calculating the flow.",
     "detector_ids": [
-      "e1_15",
-      "e1_34",
-      "e1_03",
-      "e1_49",
-      "e1_47",
-      "e1_48",
-      "e1_46",
-      "e1_45",
-      "e1_1",
-      "e1_0"
+      "e1_54", "e1_55", "e1_56", "e1_57", "e1_58", "e1_35", "e1_36", "e1_37", "e1_38", "e1_52", "e1_53"
     ]
   },
   "solver_input_detectors": {

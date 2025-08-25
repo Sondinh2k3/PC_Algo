@@ -4,5 +4,5 @@
     <trip-attributes value="type=&quot;td_0&quot; departLane=&quot;best&quot; departSpeed=&quot;max&quot; departPos=&quot;random&quot;"/>
     <lanes value="True"/>
     <!-- <insertion-density value="300.0"/> -->
-    <insertion-rate value="15000"/>
+    <insertion-rate value="10000"/>
 </configuration>

@@ -1,3 +1,5 @@
 **/__pycache__/
 venv/
 __pycache__/
+src/PhuQuoc/e1*.xml
+src/PhuQuoc/e2*.xml

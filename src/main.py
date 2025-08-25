@@ -1,4 +1,5 @@
 import traci
+# import libsumo as traci
 import yaml
 import threading
 import time
@@ -20,9 +21,7 @@ from algorithm.algo import (
     KI_H, 
     N_HAT, 
     CONTROL_INTERVAL_S,
-    run_perimeter_control_mock_test
 )
-
 
 # =================================================================
 # REAL SUMO SIMULATION
@@ -163,7 +162,7 @@ def run_sumo_simulation():
 
         n_previous = 0
         qg_previous = 3600
-        total_simulation_steps = 1820
+        total_simulation_steps = 300
 
         # --- BIẾN LƯU TRỮ DỮ LIỆU ---
         n_samples = []
@@ -243,6 +242,9 @@ def run_sumo_simulation():
                 if current_step % 10 == 0:
                     print(f"Step {current_step}s / {total_simulation_steps}s")
 
+        except Exception as err:
+            print(f"Stop simulation due to: {err}")
+
         finally:
             print("Hoàn tất mô phỏng. Dừng các luồng...")
             stop_event.set()
@@ -256,24 +258,4 @@ def run_sumo_simulation():
 
 
 if __name__ == "__main__":
-    # Mặc định chạy mô phỏng SUMO thực tế.
-    # Để chạy mô phỏng thử nghiệm với dữ liệu giả lập, dùng lệnh:
-    # python src/main.py mock
-    
-    if len(sys.argv) > 1 and sys.argv[1] == 'mock':
-        # Gọi hàm chạy thử nghiệm đã được chuyển vào module algo
-        run_perimeter_control_mock_test()
-    else:
-        run_sumo_simulation()
-
-
-if __name__ == "__main__":
-    # Mặc định chạy mô phỏng SUMO thực tế.
-    # Để chạy mô phỏng thử nghiệm với dữ liệu giả lập, dùng lệnh:
-    # python src/main.py mock
-    
-    if len(sys.argv) > 1 and sys.argv[1] == 'mock':
-        # Gọi hàm chạy thử nghiệm đã được chuyển vào module algo
-        run_perimeter_control_mock_test()
-    else:
-        run_sumo_simulation()
+    run_sumo_simulation()

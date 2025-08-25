@@ -4,6 +4,7 @@ Tự động phát hiện các nút giao, pha đèn và thông số liên quan
 """
 
 import traci
+# import libsumo as traci
 import json
 import xml.etree.ElementTree as ET
 from typing import Dict, List, Tuple, Optional

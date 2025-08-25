@@ -207,8 +207,8 @@ class PerimeterController:
         second_component = theta_2 * utilization_expr
 
         # Thiết lập mục tiêu cho model
-        # set_nonlinear_objective(model, first_component + second_component, "minimize")
-        model.setObjective(first_component + second_component, "minimize")
+        set_nonlinear_objective(model, first_component + second_component, "minimize")
+        # model.setObjective(first_component + second_component, "minimize")
 
         # Giải bài toán
         model.hideOutput()

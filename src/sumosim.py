@@ -17,6 +17,7 @@ else:
 import numpy as np
 import traci
 import sumolib
+# import libsumo as traci
 
 class SumoSim:
     def __init__(self, config: dict):
@@ -44,6 +45,7 @@ class SumoSim:
             sumo_cmd.append("--start")
             sumo_cmd.append("--quit-on-end")
         
+        # traci.start(sumo_cmd)
         traci.start(sumo_cmd, port=self.config['port'])
         logging.info("SUMO simulation started with command: %s", ' '.join(sumo_cmd))
 

@@ -9,6 +9,16 @@ Usage:
     python mfd_graph.py
 """
 
+"""
+Detectors in each region for MFD:
+Region 1: Center
+- E2: "e2_17", "e2_35", "e2_2", "e2_0", "e2_3", "e2_36", "e2_51", "e2_50", "e2_37", "e2_38"
+- E1: "e1_15","e1_34","e1_03","e1_49","e1_47","e1_48","e1_46","e1_45","e1_1","e1_0","e1_35"
+Region 2: West
+- E2: "e2_63", "e2_55", "e2_54", "e2_62", "e2_60", "e2_59", "e2_39", "e2_40", "e2_41", "e2_42", "e2_44"
+- E1: "e1_54", "e1_55", "e1_56", "e1_57", "e1_58", "e1_35", "e1_36", "e1_37", "e1_38", "e1_52", "e1_53"
+"""
+
 import os
 import sys
 import json
@@ -18,7 +28,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yaml
 import traci
-import traci.exceptions
+# import libsumo as traci
 
 # Add project root to system path
 current_dir = os.path.dirname(os.path.abspath(__name__))
@@ -26,6 +36,10 @@ project_root = os.path.dirname(current_dir)
 sys.path.append(project_root)
 
 from src.sumosim import SumoSim
+
+TOTAL_SIM_TIME = 3600
+DETECTOR_PERIOD = 10
+SAMPLING_INTERVAL = 50.0
 
 # Check SUMO_HOME
 if 'SUMO_HOME' not in os.environ:
@@ -47,78 +61,6 @@ def load_config():
     
     return sim_config, detector_config
 
-# def collect_data(sim_config, detector_config):
-#     """Collect data from e1 and e2 detectors."""
-#     print("Starting SUMO simulation...")
-    
-#     # Get detector IDs
-#     e2_detectors = detector_config['algorithm_input_detectors']['detector_ids']  # Vehicle count
-#     e1_detectors = detector_config['mfd_input_flow_detectors']['detector_ids']   # Flow
-    
-#     print(f"Found {len(e2_detectors)} e2 detectors for vehicle count")
-#     print(f"Found {len(e1_detectors)} e1 detectors for flow")
-    
-#     # Initialize SUMO simulation
-#     # sim_config['config_file'] = os.path.join('src', sim_config['config_file']) # This line is removed
-#     sumo_sim = SumoSim(sim_config)
-    
-#     data_points = []
-    
-#     try:
-#         sumo_sim.start()
-        
-#         # Simulation parameters
-#         simulation_time = 3000  # 5 minutes
-#         step_length = float(sim_config.get('step_length', 1.0))
-#         total_steps = int(simulation_time / step_length)
-        
-#         print(f"Running simulation for {simulation_time} seconds...")
-        
-#         for step in range(total_steps):
-#             sumo_sim.step()
-            
-#             # Collect vehicle count from e2 detectors
-#             vehicle_count = 0
-#             for det_id in e2_detectors:
-#                 try:
-#                     vehicle_count += traci.lanearea.getLastStepVehicleNumber(det_id)
-#                 except traci.exceptions.TraCIException:
-#                     pass  # Skip if detector not found
-            
-#             # Collect flow from e1 detectors
-#             flow_count = 0
-#             for det_id in e1_detectors:
-#                 try:
-#                     flow_count += traci.inductionloop.getLastIntervalVehicleNumber(det_id)
-#                 except traci.exceptions.TraCIException:
-#                     pass  # Skip if detector not found
-            
-#             # Convert flow to vehicles per hour
-#             flow_per_hour = flow_count * (3600 / step_length)
-            
-#             # Store data point
-#             data_points.append({
-#                 'vehicle_count': vehicle_count,
-#                 'flow_per_hour': flow_per_hour,
-#                 'time': step * step_length
-#             })
-            
-#             # Print progress every 30 seconds
-#             if (step + 1) % 30 == 0:
-#                 print(f"  Step {step + 1}/{total_steps}: "
-#                       f"Vehicles={vehicle_count}, Flow={flow_per_hour:.1f} veh/h")
-        
-#         print("Simulation completed successfully!")
-        
-#     except Exception as e:
-#         print(f"Error during simulation: {e}")
-#         return None
-#     finally:
-#         if traci.isLoaded():
-#             sumo_sim.close()
-    
-#     return data_points
-
 def collect_data(sim_config, detector_config):
     """
     Collect and aggregate data for MFD (Flow vs. Accumulation).
@@ -134,6 +76,7 @@ def collect_data(sim_config, detector_config):
     print(f"Found {len(e1_detectors)} e1 detectors for flow")
     
     # Initialize SUMO simulation
+    sim_config['config_file'] = os.path.join('src', sim_config['config_file'])
     sumo_sim = SumoSim(sim_config)
     
     data_points = []
@@ -142,18 +85,17 @@ def collect_data(sim_config, detector_config):
         sumo_sim.start()
         
         # Simulation parameters
-        simulation_time = 3000
+        simulation_time = TOTAL_SIM_TIME
         step_length = float(sim_config.get('step_length', 1.0))
         total_steps = int(simulation_time / step_length)
 
         # 1. Đặt khoảng thời gian lấy mẫu là 50 giây
-        sampling_interval = 50.0
-        steps_per_sample = int(sampling_interval / step_length)
+        steps_per_sample = int(SAMPLING_INTERVAL / step_length)
         
         accumulated_flow = 0
         accumulation_samples = []
 
-        print(f"Running simulation for {simulation_time} seconds with {sampling_interval}s aggregation interval...")
+        print(f"Running simulation for {simulation_time} seconds with {SAMPLING_INTERVAL}s aggregation interval...")
         
         for step in range(total_steps):
             sumo_sim.step()
@@ -163,7 +105,8 @@ def collect_data(sim_config, detector_config):
             current_accumulation = 0
             for det_id in e2_detectors:
                 try:
-                    current_accumulation += traci.lanearea.getLastStepVehicleNumber(det_id)
+                    last_step_veh = traci.lanearea.getLastStepVehicleNumber(det_id)
+                    current_accumulation += last_step_veh
                 except traci.exceptions.TraCIException:
                     pass
             accumulation_samples.append(current_accumulation)
@@ -172,7 +115,9 @@ def collect_data(sim_config, detector_config):
             for det_id in e1_detectors:
                 try:
                     # Dù detector có chu kỳ 10s, việc cộng dồn mỗi step vẫn đảm bảo không mất dữ liệu
-                    accumulated_flow += traci.inductionloop.getLastIntervalVehicleNumber(det_id)
+                    if (step + 1) % DETECTOR_PERIOD == 0 and step > 0:
+                        last_interval_flow = traci.inductionloop.getLastIntervalVehicleNumber(det_id)
+                        accumulated_flow += last_interval_flow
                 except traci.exceptions.TraCIException:
                     pass
             
@@ -182,20 +127,20 @@ def collect_data(sim_config, detector_config):
                 # 2. Quay lại tính SỐ LƯỢNG XE TRUNG BÌNH trong 50s
                 # Đây là cách biểu diễn 'tổng số lượng xe' một cách chính xác nhất cho một khoảng thời gian
                 avg_accumulation = sum(accumulation_samples) / len(accumulation_samples) if accumulation_samples else 0
-                accumulation = avg_accumulation * steps_per_sample
+                accumulation = sum(accumulation_samples) 
                 # Tính lưu lượng (tổng số xe đi qua trong 50s, quy đổi ra giờ)
-                flow_per_hour = accumulated_flow * (3600 / sampling_interval)
+                flow_per_hour = accumulated_flow * (3600 / SAMPLING_INTERVAL)
                 
                 # Lưu điểm dữ liệu đã được tổng hợp
                 current_time = (step + 1) * step_length
                 data_points.append({
-                    'accumulation': accumulation,
+                    'avg_accumulation': avg_accumulation,
                     'flow_per_hour': flow_per_hour,
                     'time': current_time
                 })
                 
-                print(f"  Time {current_time}s: "
-                      f"Accumulation={accumulation:.1f} vehicles, Flow={flow_per_hour:.1f} veh/h")
+                # print(f"  Time {current_time}s: "
+                #       f"Accumulation={accumulation:.1f} vehicles, Flow={flow_per_hour:.1f} veh/h")
                 
                 # Reset các biến để bắt đầu chu kỳ 50s tiếp theo
                 accumulated_flow = 0
@@ -225,7 +170,7 @@ def create_mfd_graph(data_points):
     
     # THAY ĐỔI: Sử dụng cột 'accumulation' thay vì 'vehicle_count'
     # Remove zero values and outliers
-    df = df[(df['accumulation'] > 0) & (df['flow_per_hour'] > 0)]
+    df = df[(df['avg_accumulation'] > 0) & (df['flow_per_hour'] > 0)]
     
     if len(df) == 0:
         print("No valid data points after filtering.")
@@ -235,14 +180,14 @@ def create_mfd_graph(data_points):
     plt.figure(figsize=(12, 8))
     
     # Scatter plot
-    plt.scatter(df['accumulation'], df['flow_per_hour'], 
+    plt.scatter(df['avg_accumulation'], df['flow_per_hour'], 
                 alpha=0.6, s=30, color='blue', label='Data Points')
     
     # Add trend line
     if len(df) > 1:
-        z = np.polyfit(df['accumulation'], df['flow_per_hour'], 2)
+        z = np.polyfit(df['avg_accumulation'], df['flow_per_hour'], 2)
         p = np.poly1d(z)
-        x_trend = np.linspace(df['accumulation'].min(), df['accumulation'].max(), 100)
+        x_trend = np.linspace(df['avg_accumulation'].min(), df['avg_accumulation'].max(), 100)
         plt.plot(x_trend, p(x_trend), 'r-', linewidth=2, label='Trend Line')
     
     # Customize graph with updated labels
@@ -255,7 +200,7 @@ def create_mfd_graph(data_points):
     # Add statistics with updated labels
     stats_text = f"""
     Data Points: {len(df)}
-    Accumulation Range: {df['accumulation'].min():.0f} - {df['accumulation'].max():.0f} vehicles
+    Accumulation Range: {df['avg_accumulation'].min():.0f} - {df['avg_accumulation'].max():.0f} vehicles
     Flow Range: {df['flow_per_hour'].min():.1f} - {df['flow_per_hour'].max():.1f} veh/h
     Max Flow: {df['flow_per_hour'].max():.1f} veh/h
     """

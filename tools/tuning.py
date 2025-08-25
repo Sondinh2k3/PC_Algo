@@ -8,8 +8,8 @@ import json
 import time
 import pandas as pd
 import yaml
-import traci
-import traci.exceptions
+# import traci
+import libsumo as traci
 from multiprocessing import Manager
 
 # Add project root to system path
